@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Personalización de ejercicios</title>
 
-<!-- Tipografía Poppins Semibold -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 
-<!-- Tailwind -->
- <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -47,6 +45,26 @@
     padding:8px 12px;
     border-radius:999px;
     font-weight:600;
+    transition: background-color 0.15s;
+  }
+
+  .day-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 8px; /* Ajuste para que el icono quepa */
+  }
+
+  .day-delete {
+    background: transparent;
+    color: #ef4444;
+    font-size: 16px;
+    margin-left: 4px;
+    padding: 0;
+    line-height: 1;
+  }
+  .day-delete:hover {
+    color: #b91c1c;
   }
 
   .modal-bg {
@@ -59,7 +77,6 @@
 
 <body>
 
-<!-- ENCABEZADO -->
 <header class="header">
   <div class="flex items-center justify-between">
     <div>
@@ -72,7 +89,6 @@
 
 <main class="container mx-auto px-4 py-4 space-y-4">
 
-  <!-- AÑADIR EJERCICIO -->
   <div class="card flex items-center justify-between">
     <div>
       <div class="font-semibold">Añadir ejercicio</div>
@@ -81,7 +97,6 @@
     <button id="btn-open-catalog" class="chip bg-sky-500 text-white">+ Añadir ejercicio</button>
   </div>
 
-  <!-- DÍAS -->
   <div class="card">
     <div class="flex items-center justify-between mb-2">
       <div class="font-semibold">Días</div>
@@ -94,7 +109,6 @@
     <div id="days-row" class="flex gap-2 overflow-x-auto pb-1"></div>
   </div>
 
-  <!-- LISTA DE EJERCICIOS -->
   <div class="card">
     <div class="mb-2">
       <div id="active-day-title" class="font-semibold">Ejercicios</div>
@@ -105,10 +119,8 @@
 
 </main>
 
-<!-- OVERLAY -->
 <div id="overlay" class="modal-bg fixed inset-0 z-40 hidden items-center justify-center"></div>
 
-<!-- MODAL CATÁLOGO -->
 <div id="catalog-modal" class="fixed inset-0 z-50 hidden items-start justify-center p-4 overflow-auto">
   <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl mt-12">
     <div class="flex items-center justify-between px-4 py-3 border-b">
@@ -124,13 +136,13 @@
       <div id="catalog-root" style="max-height:60vh; overflow:auto;"></div>
     </div>
 
-    <div class="p-3 border-t text-right">
+    <div class="p-3 border-t text-right flex justify-between items-center">
       <button id="catalog-cancel" class="chip bg-white border">Cerrar</button>
+      <button id="catalog-add-multiple" class="chip bg-sky-500 text-white" disabled>Añadir seleccionados (0)</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL CONFIGURACIÓN -->
 <div id="configure-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
     <div class="flex items-center justify-between px-4 py-3 border-b">
@@ -198,7 +210,6 @@
   </div>
 </div>
 
-<!-- MODAL DUPLICADO -->
 <div id="duplicate-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow p-4 w-full max-w-sm">
     <div class="font-bold text-yellow-600 text-lg">Ejercicio duplicado</div>
@@ -213,7 +224,6 @@
   </div>
 </div>
 
-<!-- MODAL GIF -->
 <div id="gif-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow p-4 max-w-md w-full">
     <div class="flex items-center justify-between mb-3">
@@ -224,7 +234,6 @@
   </div>
 </div>
 
-<!-- MODAL IMPORTAR -->
 <div id="import-modal" class="fixed inset-0 z-50 hidden items-start justify-center p-4 overflow-auto">
   <div class="bg-white rounded-xl shadow p-4 w-full max-w-lg mt-16">
     <div class="flex items-center justify-between mb-3">
@@ -253,12 +262,14 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast" class="fixed bottom-4 right-4 hidden px-4 py-2 bg-sky-600 text-white rounded shadow"></div>
 <script>
-// ===========================
-// BLOQUE 2/3 - Lógica principal
-// ===========================
+// =======================================================
+// Lógica principal con: 
+// 1. Eliminación de días.
+// 2. Selección múltiple persistente en el catálogo.
+// 3. FIX: Persistencia del estado de las secciones del catálogo (acordeón).
+// =======================================================
 
 /* ---------- Config Firebase (ajusta si necesitas) ---------- */
 const firebaseConfig = {
@@ -285,7 +296,11 @@ const state = {
   catalog: [],
   groups: [],
   pending: null,
-  duplicate: null
+  duplicate: null,
+  // Para selección múltiple en catálogo (PERSISTENTE)
+  selectedCatalogItems: new Map(), // key: item.id, value: item
+  // FIX: Para mantener abierto el acordeón del catálogo
+  openCatalogGroups: new Set(),
 };
 
 /* ---------- Helpers DOM ---------- */
@@ -416,9 +431,12 @@ async function init(){
 /* ---------- UI Binding ---------- */
 function bindUI(){
   $('btn-open-catalog').addEventListener('click', ()=>{ openCatalog(); });
+  // NOTA: Estos cierres NO limpian la selección, lo cual permite la persistencia.
   $('catalog-close').addEventListener('click', ()=>{ closeCatalog(); });
   $('catalog-cancel').addEventListener('click', ()=>{ closeCatalog(); });
   $('catalog-filter').addEventListener('input', ()=>{ renderCatalog(); });
+  // Añadir múltiples del catálogo
+  $('catalog-add-multiple').addEventListener('click', ()=>{ finalizeMultipleConfigure(); });
 
   $('cfg-close').addEventListener('click', ()=>{ closeConfigure(); });
   $('cfg-cancel').addEventListener('click', ()=>{ closeConfigure(); });
@@ -467,9 +485,6 @@ function listenPlanLocal(){
 /* ---------- Listen Firestore (if available) ---------- */
 function listenPlanFirestore(){
   if (!db) { listenPlanLocal(); return; }
-  // Use Firestore REST if firebase SDK not loaded; but to keep it simple, fallback to local for file:// use
-  // We'll try to read once via REST to prefill, but avoid auth complexity here.
-  // For reliability on file:// we rely on localStorage. If you host with HTTPS, Firestore will be used by Firebase SDK.
   listenPlanLocal(); // safe fallback to local in this environment
 }
 
@@ -479,10 +494,24 @@ function renderDays(){
   container.innerHTML = '';
   state.days.forEach(d=>{
     const btn = document.createElement('button');
-    btn.className = `chip ${d === state.activeDay ? 'bg-sky-500 text-white' : 'bg-white border'}`;
-    // <-- QUITADO EL CONTEO ENTRE PARÉNTESIS (punto 1)
-    btn.innerText = d;
-    btn.onclick = ()=>{ state.activeDay = d; renderDays(); renderExercises(); };
+    btn.className = `chip day-chip ${d === state.activeDay ? 'bg-sky-500 text-white' : 'bg-white border'}`;
+    
+    // Contenedor del nombre del día (para la funcionalidad del click)
+    const dayName = document.createElement('span');
+    dayName.innerText = d;
+    dayName.onclick = ()=>{ state.activeDay = d; renderDays(); renderExercises(); };
+    btn.appendChild(dayName);
+
+    // Botón de eliminar día (🗑️)
+    if (state.days.length > 1) { // No permitir eliminar el último día
+      const btnDelete = document.createElement('button');
+      btnDelete.className = 'day-delete';
+      btnDelete.innerHTML = '🗑️'; 
+      btnDelete.title = `Eliminar ${d}`;
+      btnDelete.onclick = (ev)=>{ ev.stopPropagation(); deleteDay(d); };
+      btn.appendChild(btnDelete);
+    }
+    
     container.appendChild(btn);
   });
   $('days-count').innerText = `${state.days.length} día(s)`;
@@ -505,6 +534,31 @@ async function addDay(){
   await savePlan();
   toast(`Día ${newN} agregado`, 'success');
 }
+
+// FUNCIÓN: Eliminar Día
+async function deleteDay(dayToRemove){
+  if (state.days.length <= 1) {
+    toast('No puedes eliminar el único día restante.', 'error');
+    return;
+  }
+  if (!confirm(`¿Estás seguro de que quieres eliminar "${dayToRemove}"? Esto eliminará todos sus ejercicios.`)) return;
+
+  const index = state.days.indexOf(dayToRemove);
+  if (index === -1) return;
+
+  state.days.splice(index, 1);
+  delete state.exercisesByDay[dayToRemove];
+
+  if (state.activeDay === dayToRemove) {
+    state.activeDay = state.days[0]; // Seleccionar el primer día restante
+  }
+
+  renderDays();
+  renderExercises();
+  await savePlan();
+  toast(`Día ${dayToRemove} eliminado`, 'success');
+}
+
 
 /* ---------- EXERCISES LIST ---------- */
 function renderExercises(){
@@ -529,7 +583,7 @@ function renderExercises(){
     const info = document.createElement('div'); info.className = 'flex-1';
     const title = document.createElement('div'); title.className = 'font-semibold'; title.innerText = ex.name;
 
-    // <-- MOSTRAR DETALLES COMPLETOS (punto 3)
+    // MOSTRAR DETALLES COMPLETOS
     const details = document.createElement('div');
     details.className = 'text-gray-500 text-sm mt-1';
     const seriesText = (ex.series === null || ex.series === undefined || ex.series === 0) ? '-' : ex.series;
@@ -580,29 +634,63 @@ async function deleteExercise(i){
   await savePlan();
 }
 
-/* ---------- CATALOG RENDER (ACORDEÓN) ---------- */
+// Nuevo Helper para abrir/cerrar grupos del catálogo (FIX principal)
+function toggleCatalogGroup(groupName) {
+    if (state.openCatalogGroups.has(groupName)) {
+        state.openCatalogGroups.delete(groupName);
+    } else {
+        state.openCatalogGroups.add(groupName);
+    }
+    renderCatalog(); // Re-render para reflejar el estado sin que se cierre
+}
+
+/* ---------- CATALOG RENDER (ACORDEÓN) - MODIFICADO PARA SELECCIÓN MÚLTIPLE y PERSISTENCIA DE ACORDEÓN ---------- */
 function renderCatalog(){
   const root = $('catalog-root');
   root.innerHTML = '';
   const q = ($('catalog-filter').value || '').toLowerCase();
+  
+  // Actualizar el contador del botón de añadir múltiples
+  const count = state.selectedCatalogItems.size;
+  const btnMultiple = $('catalog-add-multiple');
+  btnMultiple.innerText = `Añadir seleccionados (${count})`;
+  btnMultiple.disabled = count === 0;
+
+
   state.groups.forEach(group => {
     const items = state.catalog.filter(c => c.group === group && (c.name.toLowerCase().includes(q) || c.group.toLowerCase().includes(q)));
     if (!items.length) return;
     const section = document.createElement('div'); section.className = 'border rounded mb-3';
     const header = document.createElement('button'); header.className = 'w-full text-left px-3 py-2 bg-gray-50 flex items-center justify-between';
     header.innerHTML = `<span class="font-semibold">${escapeHtml(group)}</span><span class="text-gray-500 text-sm">${items.length}</span>`;
-    const list = document.createElement('div'); list.className = 'hidden p-2 space-y-2';
-    header.addEventListener('click', ()=>{ list.classList.toggle('hidden'); });
+    
+    // FIX: Usar el estado de openCatalogGroups
+    const isOpen = state.openCatalogGroups.has(group);
+    const list = document.createElement('div'); 
+    list.className = `p-2 space-y-2 ${isOpen ? '' : 'hidden'}`;
+
+    // FIX: Usar el nuevo helper para manejar el estado del acordeón
+    header.addEventListener('click', ()=>{ toggleCatalogGroup(group); }); 
+
     items.forEach(c => {
-      const row = document.createElement('div'); row.className = 'flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer';
-      row.onclick = ()=> openConfigureFromCatalog(c);
+      const isSelected = state.selectedCatalogItems.has(c.id);
+      const row = document.createElement('div'); 
+      row.className = `flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-sky-100 border border-sky-400' : ''}`;
+      
+      row.onclick = ()=> toggleCatalogSelection(c); // Ahora el click en la fila lo selecciona/deselecciona
+      
       const img = document.createElement('img'); img.src = c.gif || ''; img.className = 'w-20 h-14 object-contain rounded';
       const info = document.createElement('div'); info.className = 'flex-1';
       const nm = document.createElement('div'); nm.className = 'font-medium'; nm.innerText = c.name;
       const mtd = document.createElement('div'); mtd.className = 'text-gray-500 text-xs'; mtd.innerText = c.metodo ? (c.metodo.slice(0,80) + (c.metodo.length>80 ? '...' : '')) : '';
       info.appendChild(nm); info.appendChild(mtd);
-      const btn = document.createElement('button'); btn.className = 'chip bg-sky-500 text-white'; btn.innerText = 'Seleccionar';
-      btn.onclick = (ev)=>{ ev.stopPropagation(); openConfigureFromCatalog(c); };
+      
+      // Botón para seleccionar/quitar
+      const btn = document.createElement('button');
+      btn.className = `chip ${isSelected ? 'bg-white border text-red-500' : 'bg-sky-500 text-white'}`; 
+      btn.innerText = isSelected ? 'Quitar (-)' : 'Añadir (+)';
+      btn.onclick = (ev)=>{ ev.stopPropagation(); toggleCatalogSelection(c); };
+      
       row.appendChild(img); row.appendChild(info); row.appendChild(btn);
       list.appendChild(row);
     });
@@ -610,22 +698,80 @@ function renderCatalog(){
   });
 }
 
-/* Open / Close catalog */
-function openCatalog(){ $('catalog-modal').style.display='flex'; $('overlay').style.display='block'; renderCatalog(); $('catalog-filter').focus(); }
-function closeCatalog(){ $('catalog-modal').style.display='none'; $('overlay').style.display='none'; $('catalog-filter').value = ''; }
-
-/* ---------- Configure flow ---------- */
-function openConfigureFromCatalog(item){
-  // Al agregar desde catálogo dejamos LOS CAMPOS VACÍOS (punto 2)
-  state.pending = {...item, existingIndex: undefined};
-  $('cfg-name').innerText = item.name;
-  $('cfg-group').innerText = item.group || '';
-  $('cfg-gif').src = item.gif || '';
-  // aquí dejamos inputs vacíos para que el usuario los complete
-  clearConfigureInputs();
-  closeCatalog();
-  openConfigure();
+// FUNCIÓN: Seleccionar/Deseleccionar
+function toggleCatalogSelection(item){
+  if (state.selectedCatalogItems.has(item.id)) {
+    state.selectedCatalogItems.delete(item.id);
+  } else {
+    // Añadimos con los valores por defecto
+    state.selectedCatalogItems.set(item.id, {
+        ...item,
+        series: null, reps: null, time: null, weight: null,
+        timeUnit: 'min', weightUnit: 'kg', notes: ''
+    });
+  }
+  renderCatalog(); // Volver a renderizar. Gracias al FIX, la sección no se cerrará.
 }
+
+/* Open / Close catalog (NO limpia la selección para permitir persistencia) */
+function openCatalog(){ 
+  $('catalog-modal').style.display='flex'; 
+  $('overlay').style.display='block'; 
+  // No limpiar state.selectedCatalogItems
+  renderCatalog(); 
+  $('catalog-filter').focus(); 
+}
+function closeCatalog(){ 
+  $('catalog-modal').style.display='none'; 
+  $('overlay').style.display='none'; 
+  $('catalog-filter').value = ''; 
+  // No limpiar state.selectedCatalogItems o state.openCatalogGroups
+}
+
+// FUNCIÓN: Finalizar y agregar múltiples
+async function finalizeMultipleConfigure(){
+  if (state.selectedCatalogItems.size === 0) {
+    toast('No hay ejercicios seleccionados.', 'error');
+    return;
+  }
+  
+  const arr = state.exercisesByDay[state.activeDay] || [];
+  let addedCount = 0;
+  
+  state.selectedCatalogItems.forEach(item => {
+    // Omitimos duplicados
+    const isDuplicate = arr.some(e => e.id === item.id);
+    if (!isDuplicate) {
+      // Usamos los valores predeterminados (null o vacíos)
+      const entry = {
+        id: item.id,
+        name: item.name,
+        group: item.group,
+        gif: item.gif,
+        series: null, reps: null, time: null, weight: null,
+        weightUnit: 'kg', timeUnit: 'min', notes: ''
+      };
+      arr.push(entry);
+      addedCount++;
+    }
+  });
+
+  state.exercisesByDay[state.activeDay] = arr;
+  renderExercises();
+  await savePlan();
+  
+  // Limpiar selección SOLAMENTE DESPUÉS DE AGREGAR y renderizar
+  state.selectedCatalogItems = new Map();
+  renderCatalog();
+  
+  // Cerrar el modal después de añadir
+  closeCatalog(); 
+  toast(`${addedCount} ejercicios añadidos. Edita cada uno para configurar series/reps.`, 'success');
+}
+
+
+/* ---------- Configure flow (para editar o añadir uno a uno con detalle) ---------- */
+// NOTA: Esta función ahora solo se usa para editar un ejercicio existente.
 function openConfigureForExisting(index){
   const arr = state.exercisesByDay[state.activeDay] || [];
   const it = arr[index];
@@ -642,8 +788,27 @@ function openConfigureForExisting(index){
   $('cfg-time').value = (it.time === null || it.time === undefined) ? '' : it.time;
   $('cfg-time-unit').value = it.timeUnit || 'min';
   $('cfg-notes').value = it.notes || '';
+  
+  const cfgAddBtn = $('cfg-add');
+  cfgAddBtn.innerText = 'Actualizar';
+  
   openConfigure();
 }
+// openConfigureFromCatalog (flujo antiguo, no se usa con selección múltiple)
+function openConfigureFromCatalog(item){
+  state.pending = {...item, existingIndex: undefined};
+  $('cfg-name').innerText = item.name;
+  $('cfg-group').innerText = item.group || '';
+  $('cfg-gif').src = item.gif || '';
+  clearConfigureInputs();
+  closeCatalog();
+  
+  const cfgAddBtn = $('cfg-add');
+  cfgAddBtn.innerText = 'Agregar';
+  
+  openConfigure();
+}
+
 function openConfigure(){ $('configure-modal').style.display='flex'; $('overlay').style.display='block'; }
 function closeConfigure(){ $('configure-modal').style.display='none'; $('overlay').style.display='none'; state.pending = null; }
 
@@ -668,6 +833,7 @@ async function finalizeConfigure(){
 
   const arr = state.exercisesByDay[state.activeDay] || [];
   if (typeof state.pending.existingIndex === 'number'){
+    // --- ACTUALIZAR ---
     arr[state.pending.existingIndex] = entry;
     state.exercisesByDay[state.activeDay] = arr;
     renderExercises();
@@ -676,6 +842,8 @@ async function finalizeConfigure(){
     toast('Ejercicio actualizado', 'success');
     return;
   }
+  
+  // --- AGREGAR (solo si se llama desde openConfigureFromCatalog) ---
 
   // duplicate check
   if (arr.some(e => e.id === entry.id)){
@@ -688,7 +856,7 @@ async function finalizeConfigure(){
   state.exercisesByDay[state.activeDay] = arr;
   renderExercises();
   await savePlan();
-  // limpiar inputs después de agregar (punto 2)
+  // limpiar inputs después de agregar 
   clearConfigureInputs();
   closeConfigure();
   toast('Ejercicio agregado', 'success');
@@ -828,11 +996,6 @@ loadCatalog();
 init();
 
 </script>
-<!-- ===========================
-     BLOQUE 3/3 - Carga catálogo y cierre del HTML
-     =========================== -->
-
-<!-- Intento de carga dinámica de catalogo.js y refresco de UI -->
 <script>
 (function(){
   // Intenta cargar catalogo.js desde la misma carpeta
