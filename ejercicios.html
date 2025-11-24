@@ -38,8 +38,28 @@
     .exercise-gif{width:84px;height:64px;object-fit:cover;border-radius:8px;background:#eef4f7}
     .exercise-title{font-weight:700;color:var(--secondary-blue)}
     .action-btn{color:var(--primary-green);cursor:pointer;font-weight:700;font-size:13px}
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120}
-    .modal{background:#fff;border-radius:12px;padding:18px;width:100%;max-width:820px;box-shadow:0 8px 30px rgba(0,0,0,0.15)}
+    .modal-bg{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:120;
+  /* 👇 Nuevo: Agrega un padding inferior para compensar el bottom-nav */
+  padding-bottom: 70px; /* Ajusta según la altura de tu barra de navegación */
+}
+   .modal{
+  background:#fff;
+  border-radius:12px;
+  padding:18px;
+  width:100%;
+  max-width:820px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.15);
+  /* Asegura que el modal no sea demasiado alto y tenga scroll */
+  max-height: 100%; /* Ahora la altura se limita por el padding del modal-bg */
+  overflow-y: auto; 
+}
     .modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .modal input,.modal textarea,.modal select{width:100%;padding:10px;border-radius:8px;border:1px solid #d7e6ee;box-sizing:border-box}
     .modal .footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
@@ -56,7 +76,7 @@
     /* floating plan FAB */
     .floating-btn {
       position: fixed;
-      bottom: 90px;
+      bottom: 110px;
       right: 24px;
       background-color: var(--primary-green);
       color: white;
@@ -616,21 +636,34 @@ el('newExerciseGif').addEventListener('input', ()=> {
 });
 
 /* ========== ABRIR/CERRAR MODAL Y LIMPIEZA ========== */
+/* ========== ABRIR/CERRAR MODAL Y LIMPIEZA ========== */
 function openExerciseModal(){
+  // Obtener referencia al botón flotante
+  const floatingBtn = document.querySelector('.floating-btn');
+
   el('existingExercisesSelect').value = '';
   el('newExerciseName').value=''; el('newExerciseGif').value=''; el('newExerciseMethod').value=''; el('newExerciseGroupOther').value='';
   el('resourcePreview').innerHTML='';
   el('groupOtherWrap').style.display='none';
   showModal('exerciseModalBg');
+  
+  // 👇 AGREGAR ESTO: Ocultar el botón flotante
+  if (floatingBtn) floatingBtn.style.display = 'none'; 
 }
+
 function closeExerciseModal(){
+  // Obtener referencia al botón flotante
+  const floatingBtn = document.querySelector('.floating-btn');
+    
   hideModal('exerciseModalBg');
   // limpiar campos
   el('newExerciseName').value=''; el('newExerciseGif').value=''; el('newExerciseMethod').value=''; el('newExerciseGroupOther').value='';
   el('resourcePreview').innerHTML='';
   el('existingExercisesSelect').value='';
-}
 
+  // 👇 AGREGAR ESTO: Mostrar el botón flotante
+  if (floatingBtn) floatingBtn.style.display = 'flex'; // Usamos 'flex' porque así se define en tu CSS
+}
 /* ========== GUARDAR EJERCICIO EN FIRESTORE ========== */
 async function saveNewExercise(){
   const name = el('newExerciseName').value.trim();
@@ -654,13 +687,15 @@ async function saveNewExercise(){
     creadoEn: firebase.firestore.FieldValue.serverTimestamp()
   };
 
+// ... dentro de saveNewExercise()
   try {
     await db.collection('ejercicios').add(payload);
     toast('Ejercicio guardado en la base de datos.');
-    closeExerciseModal();
+    closeExerciseModal(); // Esta función ahora ya mostrará el botón
     // recargar catálogo
     await renderFullCatalog();
   } catch (e) {
+// ...
     console.error('Error guardando ejercicio:', e);
     alert('Error al guardar en la base de datos. Revisa consola.');
   }
