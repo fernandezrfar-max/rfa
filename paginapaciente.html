@@ -1,0 +1,1511 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rehab — Paciente</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Estilos generales (mantener) */
+    :root{
+      --bg:#0b0f14;
+      --panel:#0f1720;
+      --muted:#9aa6b2;
+      --accent:#0ea5a0;
+      --accent-2:#0ea6ff;
+      --glass: rgba(255,255,255,0.04);
+      --radius:14px;
+      --card-shadow: 0 10px 30px rgba(2,6,23,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#050607 0%, var(--bg) 100%);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#e6eef3}
+    .app{max-width:420px;margin:0 auto;min-height:100vh;padding-bottom:84px;}
+    header.topbar{display:flex;align-items:center;gap:12px;padding:16px;border-radius:0 0 18px 18px;background:linear-gradient(90deg,var(--accent-2),var(--accent));box-shadow:0 10px 30px rgba(6,30,40,0.6)}
+    .logo{width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+    .top-title{font-weight:700;font-size:18px}
+    .top-sub{font-size:12px;opacity:0.9}
+
+    main{padding:14px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:var(--radius); padding:12px; margin-bottom:12px; box-shadow:var(--card-shadow); border:1px solid var(--glass)}
+    .row{display:flex;gap:12px;align-items:center}
+    .col{flex:1}
+
+    /* Dashboard top */
+    .profile{display:flex;gap:12px;align-items:center}
+    .avatar{width:72px;height:72px;border-radius:12px;object-fit:cover;border:2px solid rgba(255,255,255,0.04)}
+    .meta h2{margin:0;font-size:20px}
+    .meta p{margin:6px 0 0 0;color:var(--muted);font-size:13px}
+    .stats{display:flex;gap:10px;margin-top:12px}
+    .stat{flex:1;padding:10px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); text-align:center}
+    .stat .num{font-size:20px;font-weight:700;color:var(--accent-2)}
+    .stat .label{font-size:12px;color:var(--muted);margin-top:6px}
+    .progress-card{display:flex;flex-direction:column;gap:8px}
+    canvas{background:transparent;border-radius:8px}
+    .two-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    /* exercises list */
+    .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+    .tab{padding:8px 14px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;font-weight:600;color:var(--muted)}
+    .tab.active{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#001; box-shadow:0 8px 24px rgba(14,166,255,0.12)}
+    .ex-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+    .ex-item{display:flex;gap:12px;align-items:center;padding:10px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+    .ex-thumb{width:96px;height:64px;border-radius:10px;object-fit:cover;background:#000}
+    .ex-info h4{margin:0;color:#fff;font-size:15px}
+    .ex-info p{margin:6px 0 0 0;color:var(--muted);font-size:13px}
+
+    /* modal exercise */
+    .modal-back{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.85));z-index:80;padding:18px}
+    .modal{width:100%;max-width:680px;background:linear-gradient(180deg,#071014, #0b1419);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 30px 70px rgba(2,6,23,0.7)}
+    .modal .title-row{display:flex;justify-content:space-between;align-items:center}
+    .modal .modal-gif{width:100%;max-height:320px;object-fit:contain;border-radius:12px;background:#000;margin-top:12px}
+
+    .timer{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--accent-2);font-size:18px;margin-top:8px}
+    .timer button{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .input-row{display:flex;gap:8px;margin-top:10px}
+    
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#001}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
+
+    /* agenda */
+    .agenda-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02);margin-bottom:8px}
+
+    /* bottom nav */
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:420px;max-width:95%;display:flex;justify-content:space-between;background:linear-gradient(90deg,#071014, #071018);padding:10px;border-radius:16px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 18px 50px rgba(2,6,23,0.6);z-index:90}
+    .nav-item{flex:1;text-align:center;color:var(--muted);font-weight:700}
+    .nav-item.active{color:var(--accent-2)}
+
+    /* modal input lightweight override */
+    .modal input { color: #0d1b2a !important; background: rgba(255,255,255,0.96); border: 1px solid rgba(0,0,0,0.08); padding: 10px; border-radius: 10px; font-size: 15px; }
+    .modal input::placeholder { color: rgba(13,27,42,0.45); }
+    /* Estilos para inputs dentro del modal */
+    .inputModal {
+      background: white !important;
+      color: #0d1b2a !important;
+      border: 1px solid rgba(0,0,0,0.15) !important;
+      padding: 10px !important;
+      border-radius: 10px !important;
+      font-size: 15px !important;
+      width: 100%;
+    }
+    .inputModal::placeholder { color: rgba(13,27,42,0.45) !important; }
+    .labelModal {
+        display: block;
+        font-size: 12px;
+        color: #6c7a89;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+    
+    /* Overlay para el porcentaje del gráfico de anillo */
+    #chartOverlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 700;
+        font-size: 24px;
+        color: var(--accent-2); /* Usa color de acento o verde */
+        pointer-events: none; /* No bloquear clics */
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <header class="topbar">
+      <div style="display:flex;gap:12px;align-items:center;flex:1">
+        <div class="logo">R</div>
+        <div>
+          <div class="top-title">RFA</div>
+          <div class="top-sub">Plan — Progreso — Agenda</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="btnRefresh" class="btn ghost" title="Salir/Regresar">⬅️</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="homeView" class="view">
+        <div class="card profile">
+          <img id="patientPhoto" class="avatar" src="https://i.ibb.co/L5Qz4z5/avatar-placeholder.png" alt="foto">
+          <div class="meta">
+            <h2 id="patientName">Cargando...</h2>
+            <p id="patientUser" class="muted">ID: —</p>
+            <p id="patientVitals" class="small muted">Edad — · Altura — · Peso —</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <div class="col stats">
+              <div class="row stats">
+                <div class="stat">
+                  <div class="num" id="statDays">0</div>
+                  <div class="label">Días</div>
+                </div>
+                <div class="stat">
+                  <div class="num" id="statSeries">0</div>
+                  <div class="label">Series</div>
+                </div>
+                <div class="stat">
+                  <div class="num" id="statKcal">0</div>
+                  <div class="label">Kcal</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card progress-card" style="position:relative;">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Progreso del Mes</div>
+            <div class="small muted">Últimas 4 semanas</div>
+          </div>
+          <div style="max-height:100px; margin-top:8px;">
+            <canvas id="progressChart" height="100"></canvas> 
+          </div>
+        </div>
+
+        <div class="two-grid">
+          <div class="card">
+            <div style="font-weight:700">Plan de Alimentación</div>
+            <div class="small muted" id="planAlimStatus">No asignado</div>
+          </div>
+          <div class="card">
+            <div style="font-weight:700">PLan Semanal</div>
+            <div class="small muted" id="rutinaWeekStatus">0/0 días</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rutinaView" class="view" style="display:none">
+        <div class="card" style="padding:10px; margin-bottom:12px; background:#1b2d3d; border-color:var(--accent-2);">
+            <div style="font-size:12px; color:var(--accent-2); font-weight:700;">TIEMPO DE LA SESIÓN</div>
+            <div class="timer" style="margin-top:4px;">
+                <div id="globalTimerDisplay" style="font-size:24px; color:#fff;">00:00</div>
+                <div style="margin-left:auto; display:flex; gap:6px;">
+                    <button id="globalTimerPlay" class="btn primary" style="padding:8px 16px;">▶ Iniciar</button>
+                    <button id="globalTimerReset" class="btn ghost" style="padding:8px 16px;">↺</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700" id="planTitle">Plan</div>
+              <div class="small muted" id="planSubtitle">Progreso Diario: 0%</div> 
+            </div>
+            <div class="small muted" id="planUpdated">—</div>
+          </div>
+
+          <div id="daysTabs" class="tabs" style="margin-top:12px"></div>
+          <div id="exercisesList" class="ex-list"></div>
+        </div>
+
+        <div class="card" style="margin-top:20px; text-align:center;">
+            <button id="btnFinalizarRutina" class="btn primary" style="width:100%; padding:14px;">
+                Finalizar Plan del día
+            </button>
+        </div>
+      </section>
+
+      <section id="progresoView" class="view" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Peso Máximo Levantado vs Tiempo</div>
+            <div class="small muted">Últimos registros</div>
+          </div>
+          <canvas id="lineChart" height="120" style="margin-top:8px"></canvas>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700">Récords Personales</div>
+          <div id="recordsList" style="margin-top:10px"></div>
+        </div>
+        
+        <div class="card">
+            <div style="font-weight:700; margin-bottom:10px;">Historial Completo de Ejercicios</div>
+            <div id="fullHistoryList" style="max-height: 400px; overflow-y: auto;">
+                <div class="small muted" style="text-align:center;">Cargando registros...</div>
+            </div>
+        </div>
+
+      </section>
+
+      <section id="agendaView" class="view" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Próximas Citas</div>
+            <div class="small muted">Confirmadas/Solicitadas</div>
+          </div>
+
+          <div id="agendaList" style="margin-top:10px"></div>
+
+          <hr style="border-top:1px solid rgba(255,255,255,0.1); border-bottom:none; margin:16px 0;">
+
+          <div style="font-weight:700; margin-bottom:10px;">Solicitar Nueva Cita</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="citaFecha" type="date" class="input" style="flex:1; padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf6fb">
+            <input id="citaHora" type="time" class="input" style="width:70px; padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf6fb">
+          </div>
+          <button id="btnCrearCita" class="btn primary" style="width:100%; margin-top:10px;">Solicitar Cita</button>
+
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" role="navigation">
+      <div class="nav-item active" data-view="homeView">Inicio</div>
+      <div class="nav-item" data-view="rutinaView">Plan</div>
+      <div class="nav-item" data-view="progresoView">Progreso</div>
+      <div class="nav-item" data-view="agendaView">Agenda</div>
+    </nav>
+  </div>
+  <div id="modalBack" class="modal-back" aria-hidden="true"
+     style="backdrop-filter: blur(6px); background: rgba(0,0,0,0.45);">
+  <div class="modal" style="
+      background:#ffffff;
+      border-radius:18px;
+      padding:20px;
+      max-width:420px;
+      width:92%;
+      animation:fadeUp .25s ease;
+    ">
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div id="modalTitle" style="font-size:20px; font-weight:800; color:#0d1b2a">
+          Ejercicio
+        </div>
+        <div id="modalSub" style="font-size:13px; color:#6c7a89; margin-top:2px">
+          Detalle
+        </div>
+      </div>
+      <button id="modalClose" class="btn ghost" style="
+          padding:6px 12px;
+          border-radius:10px;
+          font-size:13px;
+        ">Cerrar</button>
+    </div>
+
+    <div style="
+        width:100%;
+        height:220px;
+        overflow:hidden;
+        border-radius:14px;
+        margin-top:12px;
+        background:#eef2f5;
+      ">
+      <img id="modalGif" src="" alt="gif" style="
+          width:100%;
+          height:100%;
+          object-fit:contain;
+        ">
+    </div>
+
+    <div class="timer" style="
+        margin-top:14px;
+        display:flex;
+        align-items:center;
+        background:#f1f5f9;
+        padding:8px 12px;
+        border-radius:12px;
+      ">
+      <div id="modalTimerDisplay" style="
+          font-size:22px;
+          font-weight:700;
+          color:#0d1b2a;
+        ">00:00</div>
+
+      <div style="margin-left:auto; display:flex; gap:6px;">
+        <button id="modalTimerPlay" class="btn primary" style="
+            padding:6px 12px;
+            border-radius:10px;
+          ">▶</button>
+        <button id="modalTimerReset" class="btn ghost" style="
+            padding:6px 12px;
+            border-radius:10px;
+          ">↺</button>
+      </div>
+    </div>
+
+    <div class="input-row" style="margin-top:12px; display:flex; gap:10px;">
+  <div style="flex:1">
+    <label class="labelModal">Series</label>
+    <input id="inputSeries" class="inputModal" type="number" placeholder="Series realizadas">
+  </div>
+
+  <div style="flex:1">
+    <label class="labelModal">Reps</label>
+    <input id="inputReps" class="inputModal" type="number" placeholder="Repeticiones">
+  </div>
+
+  <div style="flex:1">
+    <label class="labelModal">Peso</label>
+    <input id="inputPeso" class="inputModal" type="number" placeholder="Peso (kg)">
+  </div>
+</div>
+
+
+    <div style="margin-top:10px;">
+      <label class="labelModal">Tiempo (mm:ss)</label>
+      <input id="inputTimeManual" class="inputModal" placeholder="Tiempo mm:ss (opcional)">
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="labelModal">Comentario</label>
+      <input id="inputComment" class="inputModal" placeholder="Comentario (opcional)">
+    </div>
+
+    <div id="historyBox" style="margin-top:12px; padding:12px; border-radius:12px;
+         background:rgba(14,166,255,0.06); display:none; max-height:180px; overflow:auto;">
+      <h4 style="margin:0 0 10px 0; font-size:14px; color:#0ea6ff">
+        Últimos registros
+      </h4>
+      <div id="historyList" class="small" style="color:#0d2130"></div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button id="btnSaveRecord" class="btn primary" style="
+          flex:1;
+          padding:10px;
+          border-radius:12px;
+          font-weight:700;
+        ">Guardar</button>
+
+      <button id="btnSaveClose" class="btn ghost" style="
+          flex:1;
+          padding:10px;
+          border-radius:12px;
+        ">Guardar y cerrar</button>
+    </div>
+
+    <p id="modalMsg" class="small muted" style="
+        margin-top:12px;
+        display:none;
+        text-align:center;
+      "></p>
+
+  </div>
+</div>
+
+<style>
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+</style>
+  <script type="module">
+/* -----------------------------------------
+/* -----------------------------------------
+   IMPORTS FIREBASE
+------------------------------------------*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, collection, addDoc, query, where,
+  getDocs, onSnapshot, orderBy, serverTimestamp, updateDoc, Timestamp,
+  limit
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+/* -----------------------------------------
+   CONFIG FIREBASE (¡ACTUALIZA TUS CREDENCIALES!)
+------------------------------------------*/
+const firebaseConfig = {
+  apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
+  authDomain: "rfa-2025.firebaseapp.com",
+  projectId: "rfa-2025",
+  storageBucket: "rfa-2025.firebasestorage.app",
+  messagingSenderId: "113686586280",
+  appId: "1:113686586280:web:223b4277f53ca0607c339d",
+  measurementId: "G-T7F5V4WGY9"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* -----------------------------------------
+   ESTADO Y VARIABLES GLOBALES
+------------------------------------------*/
+const params = new URLSearchParams(location.search);
+const PATIENT_ID = params.get('id');
+if(!PATIENT_ID){
+  alert('Error: Esta página debe recibir ?id=ID_PACIENTE');
+  throw new Error('No ID');
+}
+
+let CURRENT_PATIENT = null;
+let ACTIVE_PLAN = null;
+let ACTIVE_EXERCISE = null;
+let CURRENT_DAY_EXERCISES = []; // Ejercicios del día activo
+let EXERCISE_COMPLETION_STATUS = {}; // { 'ex-id-1': true, 'ex-id-2': false }
+
+// Timer Global State
+let globalTimerInterval = null;
+let timerElapsed = 0; // Tiempo total transcurrido de la sesión (ms)
+let timerRunning = false;
+let CURRENT_ACTIVE_DAY_NAME = null;
+
+/* -----------------------------------------
+   ELEMENTOS DOM
+------------------------------------------*/
+const views = {
+  homeView: document.getElementById('homeView'),
+  rutinaView: document.getElementById('rutinaView'),
+  progresoView: document.getElementById('progresoView'),
+  agendaView: document.getElementById('agendaView')
+};
+const navItems = Array.from(document.querySelectorAll('.nav-item'));
+
+const statDays = document.getElementById('statDays');
+const statSeries = document.getElementById('statSeries');
+const statKcal = document.getElementById('statKcal');
+
+const progressChartCtx = document.getElementById('progressChart').getContext('2d');
+const lineChartCtx = document.getElementById('lineChart') ? document.getElementById('lineChart').getContext('2d') : null;
+
+const daysTabs = document.getElementById('daysTabs');
+const exercisesList = document.getElementById('exercisesList');
+
+const planSubtitle = document.getElementById('planSubtitle');
+const planAlimStatus = document.getElementById('planAlimStatus');
+const rutinaWeekStatus = document.getElementById('rutinaWeekStatus');
+const btnFinalizarRutina = document.getElementById('btnFinalizarRutina');
+
+// Modal Elements
+const modalBack = document.getElementById('modalBack');
+const modalTimerDisplay = document.getElementById('modalTimerDisplay');
+const modalTimerPlay = document.getElementById('modalTimerPlay');
+const modalTimerReset = document.getElementById('modalTimerReset');
+
+const inputPeso = document.getElementById('inputPeso');
+const inputSeries = document.getElementById('inputSeries');
+const inputReps = document.getElementById('inputReps');
+const inputTimeManual = document.getElementById('inputTimeManual');
+const inputComment = document.getElementById('inputComment');
+const modalMsg = document.getElementById('modalMsg');
+
+const historyBox = document.getElementById('historyBox');
+const historyList = document.getElementById('historyList');
+const fullHistoryList = document.getElementById('fullHistoryList'); // Nuevo elemento
+
+const globalTimerDisplay = document.getElementById('globalTimerDisplay');
+const globalTimerPlay = document.getElementById('globalTimerPlay');
+const globalTimerReset = document.getElementById('globalTimerReset');
+
+
+/* -----------------------------------------
+   NAVEGACIÓN
+------------------------------------------*/
+navItems.forEach(n => n.addEventListener('click', () => {
+  navItems.forEach(x => x.classList.remove('active'));
+  n.classList.add('active');
+  Object.values(views).forEach(v => v.style.display = 'none');
+  document.getElementById(n.dataset.view).style.display = 'block';
+
+  if (n.dataset.view === 'progresoView') {
+      loadLineChart();
+      loadAllRecords(); // Cargar todos los registros al entrar a Progreso
+  }
+  if (n.dataset.view === 'agendaView') loadAgenda();
+}));
+
+// ********** CÓDIGO MODIFICADO PARA SALIR **********
+document.getElementById('btnRefresh').addEventListener('click', ()=> {
+    window.location.href = 'app.html';
+});
+// *************************************************
+
+/* -----------------------------------------
+   UTIL: Formateo y Timer Global
+------------------------------------------*/
+function formatMS(ms){
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+// ----------------------------------------------------------------------
+// 🚨 CÓDIGO AÑADIDO: FUNCIÓN AUXILIAR PARA EL FORMATO DE FECHA (SOLUCIÓN CLAVE)
+// ----------------------------------------------------------------------
+// Función auxiliar para obtener la fecha en formato DD/MM/YYYY (necesario para el calendario del administrador)
+const getFormattedDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses van de 0 a 11
+    const year = today.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+// ----------------------------------------------------------------------
+
+
+function startGlobalTimer(){
+  if(timerRunning) return;
+  timerRunning = true;
+  const timerStart = Date.now() - timerElapsed;
+  globalTimerInterval = setInterval(()=>{
+    timerElapsed = Date.now() - timerStart;
+    const timeStr = formatMS(timerElapsed);
+    globalTimerDisplay.textContent = timeStr;
+    if(modalTimerDisplay) modalTimerDisplay.textContent = timeStr; // Actualiza el modal
+  },200);
+  globalTimerPlay.textContent='Pause';
+  if(modalTimerPlay) modalTimerPlay.textContent='▶';
+}
+
+function pauseGlobalTimer(){
+  timerRunning = false;
+  clearInterval(globalTimerInterval);
+  globalTimerPlay.textContent='▶ Iniciar';
+  if(modalTimerPlay) modalTimerPlay.textContent='▶';
+}
+
+function resetGlobalTimer(){
+  pauseGlobalTimer();
+  timerElapsed = 0;
+  globalTimerDisplay.textContent = '00:00';
+}
+
+// Bindings del timer
+globalTimerPlay.addEventListener('click', ()=> timerRunning ? pauseGlobalTimer() : startGlobalTimer());
+globalTimerReset.addEventListener('click', resetGlobalTimer);
+if(document.getElementById('modalTimerPlay')) document.getElementById('modalTimerPlay').addEventListener('click', ()=> timerRunning ? pauseGlobalTimer() : startGlobalTimer());
+if(document.getElementById('modalTimerReset')) document.getElementById('modalTimerReset').addEventListener('click', resetGlobalTimer);
+
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+
+/* -----------------------------------------
+   LÓGICA DE PROGRESO DE RUTINA
+------------------------------------------*/
+async function calculateDayProgress(day) {
+    if (!day || !day.ejercicios || day.ejercicios.length === 0) return 0;
+    
+    const totalExercises = day.ejercicios.length;
+    let completedCount = 0;
+    
+    EXERCISE_COMPLETION_STATUS = {};
+
+    // --- MODIFICACIÓN: Buscar en la nueva colección `pacienteprogreso` ---
+    const sub = collection(db, "pacienteprogreso"); 
+    // --------------------------------------------------------------------
+    
+    const completionChecks = day.ejercicios.map(exercise => {
+        const q = query(
+            sub,
+            where("pacienteId", "==", PATIENT_ID), // <-- NUEVO FILTRO POR ID DE PACIENTE
+            where("tipoRegistro", "==", "registroDetallado"), // <-- SOLO REGISTROS DETALLADOS
+            where("ejercicioId", "==", exercise.id),
+            // Solo busca registros de hoy para considerar completado
+            where("createdAt", ">=", new Date(new Date().setHours(0,0,0,0))), 
+            limit(1) 
+        );
+        return getDocs(q).then(snaps => {
+            const isCompleted = !snaps.empty;
+            EXERCISE_COMPLETION_STATUS[exercise.id] = isCompleted;
+            return isCompleted;
+        });
+    });
+
+    const results = await Promise.all(completionChecks);
+    completedCount = results.filter(c => c).length;
+
+    return Math.round((completedCount / totalExercises) * 100);
+}
+
+// Función para deshabilitar el día actual al finalizar
+function setDayAsCompleted(dayName) {
+    const today = new Date().toLocaleDateString('es-CO');
+    // Guardamos la finalización en localStorage
+    localStorage.setItem(`rutinaCompleted_${PATIENT_ID}_${dayName}_${today}`, 'true');
+}
+
+// ----------------------------------------------------------------------
+// 🚨 CÓDIGO MODIFICADO: EVENT LISTENER btnFinalizarRutina (SOLUCIÓN CLAVE)
+// ----------------------------------------------------------------------
+document.getElementById('btnFinalizarRutina').addEventListener('click', async () => {
+    if (!ACTIVE_PLAN) { 
+        alert("Primero selecciona un plan."); 
+        return; 
+    }
+    const activeTab = document.querySelector('#daysTabs .tab.active');
+    if (!activeTab || !CURRENT_ACTIVE_DAY_NAME) {
+        alert("Selecciona un día de la rutina.");
+        return;
+    }
+    const dayName = CURRENT_ACTIVE_DAY_NAME;
+    
+    const progressText = planSubtitle.textContent;
+    const progressMatch = progressText.match(/(\d+)%/);
+    const progressValue = progressMatch ? parseInt(progressMatch[1]) : 0;
+
+    const totalTime = timerElapsed; 
+
+    if (progressValue < 100) {
+        if (!confirm(`El progreso es de ${progressValue}%. ¿Estás seguro de que quieres finalizar la rutina de hoy?`)) {
+            return;
+        }
+    }
+
+    // Usar la función auxiliar para obtener la fecha en formato DD/MM/YYYY
+    const dateStr = getFormattedDate(); 
+
+    try {
+        const payload = {
+            pacienteId: PATIENT_ID,
+            planId: ACTIVE_PLAN._id,
+            dia: dayName,
+            porcentaje: progressValue,
+            tiempoTotalMS: totalTime,
+            // 🚨 SOLUCIÓN: Usamos el formato DD/MM/YYYY y el campo 'fecha'
+            fecha: dateStr, 
+            createdAt: serverTimestamp(),
+            // Campo clave para identificar el documento resumen
+            tipoRegistro: 'resumenDiario' 
+        };
+
+        // 🚨 SOLUCIÓN: Guardar en la colección GLOBAL 'pacienteprogreso'
+        const resumenRef = collection(db, "pacienteprogreso"); 
+        await addDoc(resumenRef, payload);
+
+        // Se mantiene la llamada a la función para guardar el detalle completo del plan
+        // (Esto guarda el 'registroDetallado')
+        await guardarProgresoDelDia(); 
+
+        alert(`Plan del día ${dayName} finalizada y progreso (${progressValue}%) guardado. Tiempo total: ${formatMS(timerElapsed)}.`);
+        setDayAsCompleted(dayName);
+        resetGlobalTimer();
+        location.reload(); 
+        
+    } catch(err) {
+        console.error("Error al finalizar la rutina:", err);
+        alert("Error al guardar el resumen diario.");
+    }
+});
+// ----------------------------------------------------------------------
+
+/* -----------------------------------------
+   RENDERIZADO DE RUTINA
+------------------------------------------*/ 
+async function renderDayTabs(days, initialProgress) {
+    daysTabs.innerHTML = "";
+    planSubtitle.textContent = `Progreso Diario: ${initialProgress}%`;
+
+    days.forEach((day, idx) => {
+        const tab = document.createElement("div");
+        tab.className = "tab " + (idx === 0 ? "active" : "");
+        tab.textContent = day.nombre;
+
+        tab.onclick = async () => {
+            [...daysTabs.children].forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            CURRENT_DAY_EXERCISES = day.ejercicios;
+            CURRENT_ACTIVE_DAY_NAME = day.nombre;
+            const progress = await calculateDayProgress(day);
+            planSubtitle.textContent = `Progreso Diario: ${progress}%`;
+            renderExercises(day.ejercicios);
+        };
+        daysTabs.appendChild(tab);
+    });
+}
+
+function renderExercises(list){
+    exercisesList.innerHTML = "";
+    if(!list || !list.length){
+        exercisesList.innerHTML = "<div class='small muted'>No hay ejercicios</div>";
+        return;
+    }
+    const activeTab = document.querySelector('#daysTabs .tab.active');
+    const dayName = activeTab ? activeTab.textContent : null;
+    const today = new Date().toLocaleDateString('es-CO');
+    const isDayCompleted = localStorage.getItem(`rutinaCompleted_${PATIENT_ID}_${dayName}_${today}`) === 'true'; // Manejo de la restricción diaria
+
+    if (isDayCompleted) {
+        exercisesList.innerHTML = "<div class='small muted' style='padding:20px; text-align:center; background:rgba(255,100,100,0.1); border-radius:10px;'>❌ **Plan del día ya completada.** Podrás realizarla de nuevo mañana.</div>";
+        btnFinalizarRutina.style.display = 'none';
+        return;
+    }
+    btnFinalizarRutina.style.display = 'block';
+
+    list.forEach(e => {
+        const el = document.createElement("div");
+        const isExCompleted = EXERCISE_COMPLETION_STATUS[e.id];
+        el.className = "ex-item";
+        el.style.borderColor = isExCompleted ? 'var(--accent)' : 'rgba(255,255,255,0.02)';
+        
+        el.innerHTML = `
+            <img class="ex-thumb" style="object-fit:contain;background:#000" src="${e.gif}">
+            <div class="ex-info" style="flex:1">
+                <h4>${escapeHtml(e.nombre)} ${isExCompleted ? '✅' : ''}</h4>
+                <p class="small muted">
+                    ${e.series ? 'S: ' + e.series + ' · ' : ''}
+                    ${e.repeticiones ? 'R: ' + e.repeticiones : ''}
+                    ${e.peso ? ' · P: ' + e.peso + 'kg' : ''}
+                    ${e.tiempo ? ' · T: ' + e.tiempo + e.unidadTiempo : ''}
+                </p>
+            </div>
+            <span class="material-icons" style="color:var(--muted)">chevron_right</span>
+        `;
+        el.onclick = () => openExerciseModal(e);
+        exercisesList.appendChild(el);
+    });
+}
+
+/* -----------------------------------------
+   MODAL DE EJERCICIO
+------------------------------------------*/
+let modalTimerInterval = null;
+let modalTimerElapsed = 0;
+
+function startModalTimer(){
+  if(modalTimerInterval) return;
+  modalTimerElapsed = 0; // Reinicia el timer del modal al iniciar
+  const timerStart = Date.now();
+  modalTimerInterval = setInterval(()=>{
+    modalTimerElapsed = Date.now() - timerStart;
+    modalTimerDisplay.textContent = formatMS(modalTimerElapsed);
+  },200);
+}
+
+function stopModalTimer(){
+  clearInterval(modalTimerInterval);
+  modalTimerInterval = null;
+}
+
+modalTimerPlay.addEventListener('click', ()=> modalTimerInterval ? stopModalTimer() : startModalTimer());
+modalTimerReset.addEventListener('click', ()=>{
+  stopModalTimer();
+  modalTimerElapsed = 0;
+  modalTimerDisplay.textContent = '00:00';
+});
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('btnSaveRecord').addEventListener('click', () => guardarRegistro(false));
+document.getElementById('btnSaveClose').addEventListener('click', () => guardarRegistro(true));
+
+
+function closeModal(){
+  stopModalTimer();
+  modalBack.style.display = 'none';
+  // Actualizar el progreso del día al cerrar
+  if(ACTIVE_PLAN && CURRENT_ACTIVE_DAY_NAME){
+    const activeDay = ACTIVE_PLAN.dias.find(d => d.nombre === CURRENT_ACTIVE_DAY_NAME);
+    if(activeDay){
+        calculateDayProgress(activeDay).then(progress => {
+            planSubtitle.textContent = `Progreso Diario: ${progress}%`;
+            renderExercises(activeDay.ejercicios); // Vuelve a renderizar con el nuevo estado
+        });
+    }
+  }
+}
+
+async function openExerciseModal(e){
+  ACTIVE_EXERCISE = e;
+  modalTimerElapsed = 0;
+  modalTimerDisplay.textContent = '00:00';
+  document.getElementById('modalTitle').textContent = escapeHtml(e.nombre);
+  document.getElementById('modalSub').innerHTML = `
+      ${e.series ? 'S: ' + e.series + ' · ' : ''}
+      ${e.repeticiones ? 'R: ' + e.repeticiones : ''}
+      ${e.peso ? ' · P: ' + e.peso + 'kg' : ''}
+      ${e.tiempo ? ' · T: ' + e.tiempo + e.unidadTiempo : ''}
+  `;
+  document.getElementById('modalGif').src = e.gif || "https://i.ibb.co/3Wf08P5/avatar-placeholder.png";
+
+  // Resetear inputs
+  inputPeso.value = e.pesoAsignado || ""; 
+  inputSeries.value = e.seriesAsignadas || "";
+  inputReps.value = e.repeticionesAsignadas || "";
+  inputTimeManual.value = e.tiempoManual || "";
+  inputComment.value = "";
+  modalMsg.style.display = 'none';
+  
+  // Mostrar tiempo global
+  modalTimerDisplay.textContent = formatMS(timerElapsed);
+
+  // Cargar el ÚLTIMO REGISTRO para precargar inputs
+  try {
+    // --- MODIFICACIÓN: Cargar el último registro desde `pacienteprogreso` ---
+    const sub = collection(db, "pacienteprogreso"); 
+    // Nota: Es posible que necesites crear un índice compuesto en Firestore para (pacienteId, ejercicioId, createdAt desc)
+    const q1 = query(
+        sub,
+        where("pacienteId", "==", PATIENT_ID), // Filtrar por paciente
+        where("tipoRegistro", "==", "registroDetallado"), // Solo registros detallados
+        where("ejercicioId", "==", e.id),
+        orderBy("createdAt", "desc"),
+        limit(1)
+    );
+    // -------------------------------------------------------------------------
+
+    const snaps = await getDocs(q1);
+    if (!snaps.empty) {
+        const last = snaps.docs[0].data();
+        inputPeso.value = last.peso || "";
+        inputSeries.value = last.series !== undefined ? last.series : "";
+        inputReps.value = last.repeticiones || last.reps || "";
+        inputTimeManual.value = last.tiempoManual || "";
+        inputComment.value = last.comentario || "";
+    }
+
+    await loadExerciseHistory(e.id);
+  } catch (err) {
+    console.error("Error trayendo registros:", err);
+  }
+
+  modalBack.style.display = "flex";
+}
+
+async function guardarRegistro(cerrar){
+  try {
+    modalMsg.style.display = 'none';
+
+    if (!ACTIVE_EXERCISE || !PATIENT_ID) {
+        modalMsg.textContent = 'Error: No se ha seleccionado un ejercicio.';
+        modalMsg.style.display = 'block';
+        return;
+    }
+
+    const series = parseInt(inputSeries.value) || 0;
+    const repeticiones = parseInt(inputReps.value) || 0;
+    const peso = parseFloat(inputPeso.value) || 0;
+    const tiempoManual = inputTimeManual.value.trim();
+
+    if (series === 0 && peso === 0 && repeticiones === 0) {
+        modalMsg.textContent = 'Debes ingresar Series, Repeticiones o Peso.';
+        modalMsg.style.display = 'block';
+        return;
+    }
+
+    const newRecord = {
+        ejercicioId: ACTIVE_EXERCISE.id,
+        ejercicioNombre: ACTIVE_EXERCISE.nombre,
+        pacienteId: PATIENT_ID,
+        pacienteNombre: CURRENT_PATIENT.nombre || 'Desconocido',
+        planId: ACTIVE_PLAN._id || 'desconocido',
+        peso: peso.toString(),
+        series: series,
+        repeticiones: repeticiones || null,
+        tiempoManual: tiempoManual,
+        tiempoSesionTotal: formatMS(timerElapsed), // Guarda el tiempo de sesión global
+        comentario: inputComment.value.trim(),
+        createdAt: serverTimestamp(),
+        // --- NUEVO CAMPO PARA DISTINGUIR ESTE REGISTRO ---
+        tipoRegistro: 'registroDetallado' 
+        // --------------------------------------------------
+    };
+
+    // --- MODIFICACIÓN: Guardar en la colección GLOBAL `pacienteprogreso` ---
+    const progresoRef = collection(db, "pacienteprogreso"); 
+    await addDoc(progresoRef, newRecord);
+
+    modalMsg.textContent = `Registro guardado (${series} S - ${peso} kg).`;
+    modalMsg.style.display = 'block';
+
+    // Recargar historial y limpiar inputs si es necesario
+    await loadExerciseHistory(ACTIVE_EXERCISE.id);
+    if (cerrar) {
+        closeModal();
+    } else {
+        // Limpiar solo los valores de Series/Reps/Peso después de guardar uno
+        inputSeries.value = "";
+        inputReps.value = "";
+        inputPeso.value = "";
+        inputTimeManual.value = "";
+        inputComment.value = "";
+    }
+  } catch(err) {
+    console.error("Error al guardar registro:", err);
+    modalMsg.textContent = 'Error al guardar el registro. Intenta de nuevo.';
+    modalMsg.style.display = 'block';
+  }
+}
+
+async function loadExerciseHistory(ejercicioId){
+  try {
+    historyList.innerHTML = 'Cargando historial...';
+    historyBox.style.display = 'block';
+
+    // --- MODIFICACIÓN: Consultar la nueva colección `pacienteprogreso` ---
+    const sub = collection(db, "pacienteprogreso"); 
+    const q = query(
+        sub,
+        where("pacienteId", "==", PATIENT_ID), // Filtrar por paciente
+        where("tipoRegistro", "==", "registroDetallado"), // Solo registros detallados
+        where("ejercicioId", "==", ejercicioId),
+        orderBy("createdAt", "desc"),
+        limit(5)
+    );
+    // -----------------------------------------------------------------------
+
+    const snaps = await getDocs(q);
+    if (snaps.empty) {
+        historyBox.style.display = 'none';
+        historyList.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    snaps.docs.forEach(doc => {
+        const data = doc.data();
+        const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : '—';
+        html += `<div style="padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05); color:#0d1b2a">`;
+        html += ` <div style="font-weight:700; font-size:14px; color:#0d1b2a;">${date}</div>`;
+        html += ` <div style="font-size:12px; color:#6c7a89">`;
+        html += ` S: <strong>${data.series !== null ? data.series : '-'}</strong> · R: <strong>${data.repeticiones !== null ? data.repeticiones : '-'}</strong> · P: <strong>${data.peso || '-'} kg</strong>`;
+        html += `<br>Tiempo Total Sesión: ${data.tiempoSesionTotal || '—'}`;
+        if (data.comentario) {
+            html += `<br>Nota: ${escapeHtml(data.comentario)}`;
+        }
+        html += ` </div>`;
+        html += `</div>`;
+    });
+    historyList.innerHTML = html;
+    historyBox.style.display = 'block';
+
+  } catch(err) {
+    console.error("Error al cargar historial (Falta de índice de Firestore):", err);
+    historyList.innerHTML = '<div style="color:red; font-weight:700;">Error al cargar el historial. (VERIFICAR ÍNDICE COMPUESTO en Firestore)</div>';
+  }
+}
+
+/* -----------------------------------------
+   GRÁFICOS Y ESTADÍSTICAS
+------------------------------------------*/
+
+async function loadQuickStats(){
+    try {
+        const today = new Date();
+        const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        // --- MODIFICACIÓN: Consultar la nueva colección `pacienteprogreso` ---
+        const q = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", PATIENT_ID), // Filtrar por paciente
+            where("tipoRegistro", "==", "registroDetallado"), // Solo registros detallados
+            where("createdAt", ">=", oneMonthAgo),
+            orderBy("createdAt", "desc")
+        );
+        // -----------------------------------------------------------------------
+
+        const snaps = await getDocs(q);
+        let totalSeries = 0;
+        const completedDays = new Set();
+        const weeklySeries = [0, 0, 0, 0]; // (No usado por el Doughnut Chart, pero mantenido por si acaso)
+
+        snaps.forEach(doc => {
+            const data = doc.data();
+            const date = data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date();
+            completedDays.add(date.toLocaleDateString());
+            totalSeries += data.series || 0;
+        });
+
+        statDays.textContent = completedDays.size;
+        statSeries.textContent = totalSeries;
+        statKcal.textContent = '—';
+        rutinaWeekStatus.textContent = `${completedDays.size}/7 días`;
+        planAlimStatus.textContent = CURRENT_PATIENT.planAlimentacion ? 'Asignado' : 'No asignado';
+        
+        // PASAMOS EL TOTAL DE SERIES COMPLETADAS AL NUEVO GRÁFICO DE ANILLO
+        buildProgressChart(totalSeries);
+
+    } catch(err) {
+        console.warn("Error loading quick stats:", err);
+        statDays.textContent = '—';
+        statSeries.textContent = '—';
+        statKcal.textContent = '—';
+        rutinaWeekStatus.textContent = '—';
+    }
+}
+
+let progressChart = null;
+// NUEVO: Gráfico de Anillo (Doughnut Chart)
+function buildProgressChart(totalSeriesCompleted){
+    if (progressChart) progressChart.destroy();
+    
+    const SERIES_GOAL = 500; // Objetivo asumido de series completadas en el mes
+    
+    // Calcular el porcentaje de progreso (limitado a 100% visible)
+    const progressPercentage = Math.min(100, Math.round((totalSeriesCompleted / SERIES_GOAL) * 100));
+    const remaining = SERIES_GOAL - totalSeriesCompleted;
+
+    let colorPrimary = 'var(--accent)'; // Default: Green/Aqua (Alto Progreso)
+    let colorMuted = 'rgba(255,255,255,0.1)';
+
+    if (progressPercentage < 50) {
+        colorPrimary = '#f97316'; // Orange
+    } else if (progressPercentage < 75) {
+        colorPrimary = '#facc15'; // Yellow
+    }
+    
+    progressChart = new Chart(progressChartCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completado', 'Restante'],
+            datasets: [{
+                data: [totalSeriesCompleted, Math.max(0, remaining)],
+                backgroundColor: [colorPrimary, colorMuted],
+                hoverBackgroundColor: [colorPrimary, colorMuted],
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '80%', 
+            plugins: {
+                legend: {
+                    display: false 
+                },
+                tooltip: {
+                    enabled: true
+                }
+            },
+            tooltips: {
+                enabled: false 
+            }
+        }
+    });
+
+    // Añadir el Overlay de HTML
+    const chartCard = progressChartCtx.canvas.closest('.card');
+    let overlay = chartCard.querySelector('#chartOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'chartOverlay';
+        chartCard.appendChild(overlay);
+    }
+    // El color del texto es el color primario del progreso
+    overlay.style.color = colorPrimary;
+    overlay.textContent = `${progressPercentage}%`;
+}
+
+
+let lineChart = null;
+async function loadLineChart(){
+    if (!lineChartCtx) return;
+    if (lineChart) lineChart.destroy();
+    
+    try {
+        // --- MODIFICACIÓN: Consultar la nueva colección `pacienteprogreso` ---
+        const q = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", PATIENT_ID), // Filtrar por paciente
+            where("tipoRegistro", "==", "registroDetallado"), // Solo registros detallados
+            where("peso", ">", 0),
+            orderBy("createdAt", "desc"),
+            limit(20)
+        );
+        // -----------------------------------------------------------------------
+
+        const snaps = await getDocs(q);
+        const labels = [];
+        const pesos = [];
+
+        snaps.docs.reverse().forEach(doc => {
+            const data = doc.data();
+            const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : '—';
+            labels.push(date);
+            pesos.push(data.peso);
+        });
+
+        lineChart = new Chart(lineChartCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Peso Levantado (kg)',
+                    data: pesos,
+                    borderColor: 'var(--accent-2)',
+                    backgroundColor: 'rgba(14, 166, 255, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: 'var(--accent-2)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: 'rgba(255,255,255,0.08)'
+                        },
+                        ticks: {
+                            color: 'var(--muted)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.08)'
+                        },
+                        ticks: {
+                            color: 'var(--muted)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false 
+                    }
+                }
+            }
+        });
+        
+    } catch(err) {
+        console.warn("Error loading line chart:", err);
+    }
+}
+
+async function loadAllRecords(){
+    fullHistoryList.innerHTML = '<div class="small muted" style="text-align:center;">Cargando historial completo...</div>';
+    
+    try {
+        // --- MODIFICACIÓN: Consultar la nueva colección `pacienteprogreso` ---
+        const q = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", PATIENT_ID), // Filtrar por paciente
+            where("tipoRegistro", "==", "registroDetallado"), // Solo registros detallados
+            orderBy("createdAt", "desc"),
+            limit(30)
+        );
+        // -----------------------------------------------------------------------
+        
+        const snaps = await getDocs(q);
+        if (snaps.empty) {
+            fullHistoryList.innerHTML = '<div class="small muted" style="text-align:center;">No hay registros de ejercicios.</div>';
+            return;
+        }
+
+        let html = '';
+        snaps.docs.forEach(doc => {
+            const data = doc.data();
+            const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : '—';
+            const time = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—';
+
+            html += `<div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">`;
+            html += ` <div style="font-weight:700; font-size:15px; color:#fff;">${escapeHtml(data.ejercicioNombre || 'Ejercicio Desconocido')}</div>`;
+            html += ` <div style="font-size:12px; color:var(--muted); margin-top:4px;">`;
+            html += ` Fecha: ${date} ${time} · Tiempo Sesión: ${data.tiempoSesionTotal || '—'}`;
+            html += ` </div>`;
+            html += ` <div style="font-size:13px; font-weight:600; color:var(--accent)">`;
+            html += ` S: ${data.series !== null ? data.series : '-'} · R: ${data.repeticiones !== null ? data.repeticiones : '-'} · P: ${data.peso || '-'} kg`;
+            html += ` </div>`;
+            if (data.comentario) {
+                html += `<div style="font-size:12px; color:#9aa6b2; margin-top:4px;">Nota: ${escapeHtml(data.comentario)}</div>`;
+            }
+            html += `</div>`;
+        });
+
+        fullHistoryList.innerHTML = html;
+
+    } catch(err) {
+        console.error("Error al cargar todos los registros:", err);
+        fullHistoryList.innerHTML = '<div class="small muted" style="text-align:center; color:red;">Error al cargar el historial.</div>';
+    }
+}
+
+/* -----------------------------------------
+   AGENDA Y CITAS
+------------------------------------------*/
+
+async function loadAgenda(){
+  const agendaList = document.getElementById('agendaList');
+  agendaList.innerHTML = 'Cargando citas...';
+
+  try {
+    const q = query(
+        collection(db, "pacientes", PATIENT_ID, "agenda"),
+        orderBy("fecha"),
+        limit(10)
+    );
+    const snaps = await getDocs(q);
+
+    if(snaps.empty){
+        agendaList.innerHTML = '<div class="small muted">No hay citas confirmadas/solicitadas.</div>';
+        return;
+    }
+
+    agendaList.innerHTML = '';
+    snaps.docs.forEach(doc => {
+        const cita = doc.data();
+        const status = cita.confirmada ? 'Confirmada ✅' : 'Pendiente ⏳';
+        const statusColor = cita.confirmada ? 'var(--accent)' : 'var(--muted)';
+
+        const el = document.createElement('div');
+        el.className = 'agenda-item';
+        el.innerHTML = `
+            <div>
+                <div style="font-weight:700; font-size:15px;">${cita.fecha} a las ${cita.hora}</div>
+                <div class="small" style="color:${statusColor}; margin-top:4px;">${status}</div>
+            </div>
+        `;
+        agendaList.appendChild(el);
+    });
+
+  } catch(err) {
+    console.error("Error al cargar agenda:", err);
+    agendaList.innerHTML = '<div class="small muted" style="color:red;">Error al cargar la agenda.</div>';
+  }
+}
+
+// Botón Solicitar Cita
+document.getElementById('btnCrearCita').addEventListener('click', async () => {
+    const citaFecha = document.getElementById('citaFecha');
+    const citaHora = document.getElementById('citaHora');
+    const fecha = citaFecha.value;
+    const hora = citaHora.value;
+
+    if (!fecha || !hora) {
+        alert("Por favor, selecciona una fecha y hora para la solicitud.");
+        return;
+    }
+    
+    // Simple validación de fecha futura
+    const requestedDate = new Date(`${fecha}T${hora}:00`);
+    if(requestedDate < new Date()){
+        alert("No puedes solicitar una cita en el pasado.");
+        return;
+    }
+
+    try {
+        const payload = {
+            pacienteId: PATIENT_ID,
+            fecha: fecha,
+            hora: hora,
+            confirmada: false, // Por defecto, es una solicitud (pendiente)
+            createdAt: serverTimestamp(),
+        };
+
+        const agendaRef = collection(db, "pacientes", PATIENT_ID, "agenda");
+        await addDoc(agendaRef, payload);
+
+        alert("¡Solicitud de cita enviada exitosamente! Espera la confirmación del terapeuta.");
+        citaFecha.value = '';
+        citaHora.value = '';
+        loadAgenda(); // Recargar la lista de citas
+    } catch(err) {
+        console.error("Error al solicitar cita:", err);
+        alert("Error al enviar la solicitud de cita.");
+    }
+});
+
+
+/* -----------------------------------------
+   LÓGICA DEL PLAN DE RUTINA
+------------------------------------------*/
+
+// Función para renderizar el plan completo después de ser seleccionado
+async function renderFullPlan(plan){
+    ACTIVE_PLAN = plan;
+    document.getElementById('planTitle').textContent = plan.nombre || 'Plan de Rehabilitación';
+    document.getElementById('planUpdated').textContent = plan.fechaAsignacion ? new Date(plan.fechaAsignacion.seconds * 1000).toLocaleDateString() : '—';
+    
+    // Convertir ejercicios para tener campos de asignación para precarga
+    plan.dias.forEach(day => {
+        day.ejercicios = day.ejercicios.map(convertExercise);
+    });
+    
+    // Calcular progreso del primer día y renderizar
+    const firstDay = plan.dias[0];
+    if(firstDay){
+        CURRENT_ACTIVE_DAY_NAME = firstDay.nombre;
+        const initialProgress = await calculateDayProgress(firstDay);
+        await renderDayTabs(plan.dias, initialProgress);
+        renderExercises(firstDay.ejercicios);
+    } else {
+        daysTabs.innerHTML = '';
+        exercisesList.innerHTML = '<div class="small muted">Este plan no tiene días asignados.</div>';
+    }
+}
+
+// Función para cargar los planes asignados (listener para la colección)
+async function loadAssignedPlans(newSelector, assigned){
+    if (!assigned || assigned.length === 0) {
+        newSelector.innerHTML = '<div class="small muted">No hay planes de rutina asignados.</div>';
+        return;
+    }
+
+    const plans = [];
+    for (const a of assigned) {
+        const p = await loadPlanById(a.id);
+        if (p) plans.push({ info: a, plan: p });
+    }
+
+    if (!plans.length) {
+        exercisesList.innerHTML = '<div class="small muted">No se encontraron planes válidos</div>';
+        return;
+    }
+
+    plans.forEach((pObj, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn ghost';
+        btn.style.padding = '6px 10px';
+        btn.style.fontWeight = '700';
+        btn.textContent = pObj.plan.nombre || pObj.plan.name || `Plan ${idx+1}`;
+        
+        btn.addEventListener('click', () => {
+            Array.from(newSelector.children).forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFullPlan(pObj.plan);
+        });
+
+        newSelector.appendChild(btn);
+    });
+
+    // Cargar el primer plan por defecto
+    newSelector.children[0].classList.add('active');
+    renderFullPlan(plans[0].plan);
+}
+
+async function loadPlanById(id){
+    try {
+        if(!id) return null;
+        const ref = doc(db, 'planes', id);
+        const snap = await getDoc(ref);
+        if(!snap.exists()) return null;
+
+        const p = snap.data();
+        p._id = snap.id;
+        return p;
+    } catch(err) {
+        console.warn('loadPlanById', err);
+        return null;
+    }
+}
+
+// Helper para convertir el valor 0 en 0 y no en null
+const getNumValue = (v1, v2) => (v1 !== undefined && v1 !== null) ? v1 : ((v2 !== undefined && v2 !== null) ? v2 : null);
+
+function convertExercise(e){
+    return {
+        id: e.id || e._id || "",
+        nombre: e.name || e.nombre || "Ejercicio",
+        musculo: e.group || "",
+        gif: e.gif || "https://i.ibb.co/3Wf08P5/avatar-placeholder.png",
+        // *** CORRECCIÓN: Usar getNumValue para manejar el valor 0 correctamente ***
+        series: getNumValue(e.sets, e.series),
+        repeticiones: getNumValue(e.reps, e.repeticiones),
+        peso: getNumValue(e.weight, e.peso),
+        // *************************************************************************
+        tiempo: e.time || null,
+        unidadTiempo: e.timeUnit || "",
+        // comentario / nota del ejercicio
+        nota: e.notes || e.nota || "",
+        // Campos de asignación para precarga
+        seriesAsignadas: getNumValue(e.sets, e.series),
+        repeticionesAsignadas: getNumValue(e.reps, e.repeticiones),
+        pesoAsignado: getNumValue(e.weight, e.peso),
+    };
+}
+
+
+async function guardarProgresoDelDia() {
+    if (!ACTIVE_PLAN || !CURRENT_ACTIVE_DAY_NAME || !CURRENT_DAY_EXERCISES.length) return;
+
+    // Se asume que esta colección sigue el patrón original del usuario
+    const progresoRef = collection(db, "pacientes", PATIENT_ID, "progreso"); 
+
+    const data = {
+        pacienteId: PATIENT_ID,
+        planId: ACTIVE_PLAN._id,
+        dia: CURRENT_ACTIVE_DAY_NAME,
+        ejerciciosDetalle: CURRENT_DAY_EXERCISES.map(e => ({
+            id: e.id,
+            nombre: e.nombre,
+            seriesAsignadas: e.series,
+            repeticionesAsignadas: e.repeticiones,
+            pesoAsignado: e.peso,
+            nota: e.nota || "",
+        })),
+        createdAt: serverTimestamp(),
+    };
+
+    try {
+        await addDoc(progresoRef, data);
+        console.log("✔ Detalle de Progreso Diario guardado:", data);
+    } catch (error) {
+        console.error("❌ Error guardando detalle de progreso:", error);
+    }
+}
+
+
+/* -----------------------------------------
+   FUNCIÓN PARA RASTREAR ACTIVIDAD DEL PACIENTE
+------------------------------------------*/
+async function trackPatientPresence() {
+    if (!PATIENT_ID) return;
+    try {
+        const pRef = doc(db, "pacientes", PATIENT_ID);
+        // Usamos updateDoc para solo actualizar el campo 'lastSeen'
+        await updateDoc(pRef, { lastSeen: Timestamp.now() });
+    } catch (err) {
+        console.warn("No se pudo actualizar la presencia:", err);
+    }
+}
+
+/* -----------------------------------------
+   INICIALIZACIÓN
+------------------------------------------*/
+(async function init(){
+    try {
+        const pRef = doc(db, "pacientes", PATIENT_ID);
+        const pSnap = await getDoc(pRef);
+
+        if(!pSnap.exists()){
+            alert("Paciente no existe");
+            return;
+        }
+
+        CURRENT_PATIENT = pSnap.data();
+        CURRENT_PATIENT.nombre ||= "Sin nombre";
+        CURRENT_PATIENT.foto ||= "https://i.ibb.co/L5Qz4z5/avatar-placeholder.png";
+
+        // Renderizar datos del paciente
+        document.getElementById('patientName').textContent = CURRENT_PATIENT.nombre;
+        document.getElementById('patientUser').textContent = `ID: ${PATIENT_ID}`;
+        document.getElementById('patientVitals').textContent = 
+            `Edad ${CURRENT_PATIENT.edad || '—'} · Altura ${CURRENT_PATIENT.altura || '—'} · Peso ${CURRENT_PATIENT.peso || '—'}`;
+        document.getElementById('patientPhoto').src = CURRENT_PATIENT.foto;
+
+        // Cargar estadísticas rápidas
+        await loadQuickStats();
+        
+        // Cargar planes
+        const planSelectorContainer = document.getElementById('daysTabs');
+        if (CURRENT_PATIENT.planesAsignados) {
+            await loadAssignedPlans(planSelectorContainer, CURRENT_PATIENT.planesAsignados);
+        } else {
+            planSelectorContainer.innerHTML = '<div class="small muted">No hay planes de rutina asignados.</div>';
+            exercisesList.innerHTML = '<div class="small muted">No hay ejercicios para mostrar.</div>';
+        }
+        
+        // Rastrear presencia
+        setInterval(trackPatientPresence, 60000); // Cada minuto
+        trackPatientPresence();
+
+    } catch(err) {
+        console.error("Fallo de inicialización:", err);
+        alert("Fallo al cargar la aplicación del paciente.");
+    }
+})();
+</script>
+</body>
+</html>

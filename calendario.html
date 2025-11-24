@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendario & Progreso Admin (Rediseño) — Final</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Bloque CSS completamente limpio y validado */
+        :root{
+            --bg: #121212;
+            --card: #1f1f1f;
+            --accent: #0ea5e9;
+            --accent-dark: #0284c7;
+            --text: #e4e4e7;
+            --muted: #a1a1aa;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        *{ box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+        header { background: var(--card); color: var(--text); padding: 15px; text-align: center; font-size: 20px; font-weight: 800; border-bottom: 1px solid #333; }
+        .container { 
+            max-width: 900px; 
+            margin: 18px auto; 
+            padding: 20px; 
+            padding-bottom: 120px; 
+            display: grid; 
+            grid-template-columns: 1fr 420px; 
+            gap: 18px; 
+        }
+
+        /* Controls */
+        .month-controls { display: flex; justify-content: space-between; margin: 8px 0 14px 0; grid-column: 1/-1; }
+        .month-btn { padding: 8px 12px; border: none; background: #242424; color: var(--text); border-radius: 10px; cursor: pointer; font-weight: 700; transition: background 0.15s; border: 1px solid #333; }
+        .month-btn:hover { background: #333; }
+        #currentMonthDisplay { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+
+        /* Calendario */
+        #calendario, #patientListContainer, #patientProcess {
+            background: var(--card); 
+            padding: 16px; 
+            border-radius: var(--radius);
+            box-shadow: var(--shadow); 
+            margin-bottom: 20px; 
+            border: 1px solid #333;
+        }
+        .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); text-align: center; gap: 8px; }
+        .cal-grid.header { font-weight: 800; color: var(--muted); padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); margin-bottom: 8px; }
+        .cal-day { padding: 12px 8px; background: #2c2c2c; border-radius: 10px; cursor: pointer; font-weight: 700; position: relative; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .cal-day:hover { background: #3b3b3b; }
+        .hoy { background: var(--accent-dark) !important; color: #fff; box-shadow: 0 6px 18px rgba(2,8,30,0.6); }
+        .active-day { outline: 3px solid rgba(14,166,255,0.12); }
+        .day-markers { position: absolute; bottom: 6px; left: 6px; right: 6px; display: flex; gap: 6px; justify-content: center; }
+        .marker { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); }
+        .marker.completed { background: var(--success); box-shadow: 0 2px 6px rgba(34,197,94,0.15); }
+        .marker.records { background: var(--accent); box-shadow: 0 2px 6px rgba(14,166,255,0.12); }
+        .marker.none { background: #6b6b6b; opacity: 0.5; }
+
+        /* Patient list */
+        #patientListContainer h3 { margin-top: 0; color: var(--accent); }
+        .user-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; margin-bottom: 8px; background: #242424; cursor: pointer; border: 1px solid #444; transition: all 0.12s; }
+        .user-item.selected { border-color: var(--accent); background: #2f2f2f; transform: translateY(-2px); }
+        .user-item img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(14,166,255,0.12); }
+        .user-info { flex: 1; }
+        .user-info .name { font-weight: 800; }
+        .user-info .meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+        .user-status { font-size: 12px; font-weight: 700; padding: 6px 8px; border-radius: 8px; }
+        .status-online { color: var(--success); border: 1px solid rgba(34,197,94,0.15); background: rgba(34,197,94,0.04); }
+        .status-offline { color: var(--muted); border: 1px solid rgba(255,255,255,0.02); background: transparent; }
+
+        /* Process panel */
+        #patientProcess h3 { margin-top: 0; color: var(--accent); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .muted { color: var(--muted); }
+        .error-msg { color: var(--danger); font-weight: 700; padding: 10px; background: rgba(239,68,68,0.06); border-radius: 8px; }
+        .success-msg { color: var(--success); font-weight: 700; padding: 10px; background: rgba(34,197,94,0.06); border-radius: 8px; }
+
+        .exercise-item { padding: 12px; border-left: 4px solid var(--accent); margin-bottom: 12px; background: #242424; border-radius: 8px; }
+        .ex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .ex-header h4 { margin: 0; font-size: 16px; }
+        .record-detail { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 6px 0; font-size: 13px; border-top: 1px dashed rgba(255,255,255,0.03); margin-top: 8px; padding-top: 8px; }
+        .timestamp { font-size: 12px; color: var(--muted); grid-column: 1 / -1; margin-top: 6px; }
+
+        /* Responsive */
+        @media (max-width:980px) {
+            .container { grid-template-columns: 1fr; padding: 12px; }
+        }
+
+        footer.note { text-align: center; color: var(--muted); margin-top: 8px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<header>Panel de Administración RFA — Calendario & Progreso</header>
+
+<div class="container">
+
+    <div class="month-controls" style="grid-column: 1 / -1;">
+        <div>
+            <button class="month-btn" onclick="cambiarMes(-1)">← Mes anterior</button>
+            <button id="currentMonthDisplay" class="month-btn">Cargando...</button>
+            <button class="month-btn" onclick="cambiarMes(1)">Mes siguiente →</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+            <button class="month-btn" onclick="refreshPatients()">↻ Refrescar pacientes</button>
+        </div>
+    </div>
+
+    <div id="calendario">
+        </div>
+
+    <div id="patientListContainer">
+        <h3>👤 Pacientes Asignados</h3>
+        <div id="onlineList"><p class="muted">Cargando pacientes...</p></div>
+    </div>
+
+    <div id="patientProcess">
+        <h3>📈 Progreso Detallado <span id="selectedDayTitle" style="font-weight:600; font-size:14px; color:var(--muted);">Seleccione Día / Paciente</span></h3>
+        <div id="processList"><p class="muted">Seleccione un paciente y un día en el calendario.</p></div>
+    </div>
+
+</div>
+
+<div style="max-width:900px;margin:0 auto;padding:10px;">
+    <div class="note muted" style="text-align:center;">Este panel lee tanto <code>registroDetallado</code> como <code>resumenDiario</code> de la colección **`pacienteprogreso`**. Si el paciente pulsó "Finalizar Plan del día" se reflejará aquí.</div>
+</div>
+
+<script type="module">
+/* -----------------------------------------
+    IMPORTS FIREBASE
+    ** Versión 10.8.0 para máxima estabilidad. **
+------------------------------------------*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+    getFirestore, doc, getDoc, collection, getDocs, query, orderBy, where, Timestamp, serverTimestamp, addDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+/* -----------------------------------------
+    CONFIG FIREBASE (mantén las tuyas)
+------------------------------------------*/
+const firebaseConfig = {
+    apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
+    authDomain: "rfa-2025.firebaseapp.com",
+    projectId: "rfa-2025",
+    storageBucket: "rfa-2025.firebasestorage.app",
+    messagingSenderId: "113686586280",
+    appId: "1:113686586280:web:223b4277f53ca0607c339d",
+    measurementId: "G-T7F5V4WGY9"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* -----------------------------------------
+    ESTADO GLOBAL
+------------------------------------------*/
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let selectedDate = new Date();
+let allPatients = [];
+let selectedPatientId = null;
+let monthSummariesCache = {}; // { patientId: { 'YYYY-MM': Set(fechaStrings_DD/MM/YYYY) } }
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/* -----------------------------------------
+    UTILIDADES FECHAS/FORMATO
+------------------------------------------*/
+// 1. DD/MM/YYYY format: Usado para la consulta a Firestore y para la visualización (Nuevo formato).
+function formatQueryDate(date) {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+// 2. YYYY-MM-DD format: Usado para consultar datos antiguos (Legacy format).
+function formatLegacyDate(dateStrQuery) { // dateStrQuery is DD/MM/YYYY
+    const [day, month, year] = dateStrQuery.split('/');
+    return `${year}-${month}-${day}`;
+}
+
+function formatTimeFromMS(ms){
+    const s = Math.floor(ms/1000);
+    const m = Math.floor(s/60);
+    const sec = s%60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function isoMonthKey(year, month) {
+    return `${year}-${String(month+1).padStart(2,'0')}`;
+}
+
+/* -----------------------------------------
+    CALENDARIO: generar y pintar
+------------------------------------------*/
+function cambiarMes(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    generarCalendario();
+}
+
+async function generarCalendario() {
+    const cont = document.getElementById('calendario');
+    const today = new Date();
+    const year = currentYear;
+    const month = currentMonth;
+
+    document.getElementById('currentMonthDisplay').textContent = `${MESES[month]} ${year}`;
+
+    const primerDia = new Date(year, month, 1).getDay();
+    const diasMes = new Date(year, month + 1, 0).getDate();
+
+    // Pre-cargar summaries para paciente seleccionado (optimizado)
+    if (selectedPatientId) {
+        // Se carga y filtra en cliente dado el formato DD/MM/YYYY
+        await ensurePatientMonthSummariesLoaded(selectedPatientId, year, month); 
+    }
+
+    let html = '';
+    html += `<div class='cal-grid header'><div>LUN</div><div>MAR</div><div>MIÉ</div><div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div></div>`;
+    html += `<div class='cal-grid'>`;
+
+    // Ajuste: convertir primerDia (0=Dom) -> índice LUN..DOM (LUN=0)
+    let diaSemana = primerDia === 0 ? 6 : primerDia - 1;
+    for (let i = 0; i < diaSemana; i++) html += `<div></div>`;
+
+    for (let d = 1; d <= diasMes; d++) {
+        const dateToCheck = new Date(year, month, d);
+        const esHoy = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        const esSeleccionado = selectedDate && dateToCheck.toDateString() === selectedDate.toDateString();
+
+        const dateStrQuery = formatQueryDate(dateToCheck); // DD/MM/YYYY para la consulta
+        
+        // Calcular marcadores
+        const markers = computeMarkersForDay(selectedPatientId, dateStrQuery);
+
+        html += `<div 
+            class='cal-day ${esHoy ? "hoy" : ""} ${esSeleccionado && !esHoy ? "active-day" : ""}' 
+            onclick='seleccionarDia(this, ${d})'
+            data-day="${d}"
+            data-date-query="${dateStrQuery}"
+            >
+            <div style="flex:1; display:flex; align-items:center; justify-content:center;">${d}</div>
+            <div class="day-markers">`;
+        // If markers exist, add spans
+        if (markers.completed) html += `<span class="marker completed" title="Día finalizado (resumen)"></span>`;
+        if (markers.hasRecords) html += `<span class="marker records" title="Registros de ejercicios"></span>`;
+        if (!markers.completed && !markers.hasRecords) html += `<span class="marker none" title="Sin actividad"></span>`;
+
+        html += `</div></div>`;
+    }
+
+    html += `</div>`;
+    cont.innerHTML = html;
+}
+
+/* -----------------------------------------
+    MARKERS: decide si día tiene resumen/registro
+------------------------------------------*/
+function computeMarkersForDay(patientId, dateStrQuery) { // dateStrQuery is DD/MM/YYYY
+    const markers = { completed: false, hasRecords: false };
+    if (!patientId) return markers;
+
+    const monthKey = isoMonthKey(currentYear, currentMonth);
+    const cacheForPatient = monthSummariesCache[patientId];
+    
+    // Consulta en caché con el formato DD/MM/YYYY
+    if (cacheForPatient && cacheForPatient[monthKey] && cacheForPatient[monthKey].has(dateStrQuery)) {
+        markers.completed = true;
+    }
+    // El marcador de 'hasRecords' se añade de forma dinámica en loadDetailedProgress
+    return markers;
+}
+
+/* -----------------------------------------
+    CARGA DE PACIENTES
+------------------------------------------*/
+async function loadAllPatients() {
+    const listCont = document.getElementById('onlineList');
+    listCont.innerHTML = '<p class="muted">Cargando pacientes...</p>';
+
+    try {
+        const q = query(collection(db, "pacientes"), orderBy("nombre"));
+        const snaps = await getDocs(q);
+
+        allPatients = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        renderPatientList();
+
+    } catch(err) {
+        console.error("Error cargando pacientes:", err);
+        listCont.innerHTML = '<p class="error-msg">Error al cargar pacientes.</p>';
+    }
+}
+
+function renderPatientList() {
+    const listCont = document.getElementById('onlineList');
+    listCont.innerHTML = '';
+
+    if (allPatients.length === 0) {
+        listCont.innerHTML = '<p class="muted">No hay pacientes registrados.</p>';
+        return;
+    }
+
+    allPatients.forEach(p => {
+        const now = Timestamp.now().toDate().getTime();
+        const lastSeenTime = p.lastSeen ? p.lastSeen.toDate().getTime() : 0;
+        const diffMinutes = (now - lastSeenTime) / (1000 * 60);
+        const isOnline = diffMinutes < 5;
+        const statusClass = isOnline ? 'status-online' : 'status-offline';
+        const statusText = isOnline ? 'ACTIVO' : 'INACTIVO';
+        const planName = p.planesAsignados && p.planesAsignados.length > 0 && p.planesAsignados[0].nombre ? p.planesAsignados[0].nombre : 'Sin Plan';
+
+        const item = document.createElement('div');
+        item.className = `user-item ${p.id === selectedPatientId ? 'selected' : ''}`;
+        item.setAttribute('data-id', p.id);
+        item.innerHTML = `
+            <img src="${p.foto || 'https://via.placeholder.com/50/0ea5e9/fff?text=RFA'}" alt="${p.nombre}">
+            <div class="user-info">
+                <div class="name">${p.nombre || 'Paciente sin nombre'}</div>
+                <div class="meta">Plan: ${planName}</div>
+            </div>
+            <div class="user-status ${statusClass}">${statusText}</div>
+        `;
+        item.onclick = () => selectPatient(p.id);
+        listCont.appendChild(item);
+    });
+
+    // Auto-select first if none
+    if (!selectedPatientId && allPatients.length > 0) {
+        selectPatient(allPatients[0].id);
+    }
+}
+
+function selectPatient(id) {
+    selectedPatientId = id;
+    Array.from(document.querySelectorAll('.user-item')).forEach(el => el.classList.remove('selected'));
+    const selectedEl = document.querySelector(`.user-item[data-id="${id}"]`);
+    if (selectedEl) selectedEl.classList.add('selected');
+
+    // Clear process list while loading
+    document.getElementById('processList').innerHTML = '<p class="muted">Cargando progreso para paciente...</p>';
+
+    // Cargar summaries y regenerar calendario para ver marcadores
+    ensurePatientMonthSummariesLoaded(id, currentYear, currentMonth)
+        .then(() => {
+            generarCalendario();
+            // Cargar progreso del día seleccionado usando el formato DD/MM/YYYY
+            loadDetailedProgress(id, formatQueryDate(selectedDate));
+        })
+        .catch(err => {
+            console.warn("No se pudieron cargar las summaries del paciente:", err);
+            generarCalendario();
+            loadDetailedProgress(id, formatQueryDate(selectedDate));
+        });
+}
+
+/* -----------------------------------------
+    CARGAR RESUMEN DEL MES PARA PACIENTE (cache)
+------------------------------------------*/
+async function ensurePatientMonthSummariesLoaded(patientId, year, month) {
+    if (!patientId) return;
+    const monthKey = isoMonthKey(year, month);
+    
+    if (!monthSummariesCache[patientId]) {
+        monthSummariesCache[patientId] = {};
+    }
+
+    if (monthSummariesCache[patientId][monthKey]) {
+        return; // ya cargado
+    }
+
+    try {
+        // Consultar todos los resúmenes del paciente (sin filtro de rango temporal en DB)
+        const q = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", patientId),
+            where("tipoRegistro", "==", "resumenDiario")
+        );
+
+        const snaps = await getDocs(q);
+
+        const targetMonth = String(month + 1).padStart(2, '0'); // MM
+        const targetYear = String(year); // YYYY
+
+        const set = new Set();
+        snaps.docs.forEach(d => {
+            const data = d.data();
+            // Filtrar en cliente usando la cadena DD/MM/YYYY
+            if (data && data.fecha) {
+                const parts = data.fecha.split('/'); // [DD, MM, YYYY]
+                if (parts.length === 3 && parts[1] === targetMonth && parts[2] === targetYear) {
+                    set.add(data.fecha); // Guardar la cadena DD/MM/YYYY
+                }
+            }
+        });
+        
+        monthSummariesCache[patientId][monthKey] = set;
+        return;
+    } catch (err) {
+        console.error("Error cargando resumen mensual (Filtro en cliente):", err);
+        monthSummariesCache[patientId][monthKey] = new Set();
+        throw err;
+    }
+}
+
+/* -----------------------------------------
+    CARGAR PROGRESO DETALLADO Y RESUMEN (ambos)
+    ** INCLUYE LÓGICA DE FALLBACK PARA DATOS ANTIGUOS **
+------------------------------------------*/
+async function loadDetailedProgress(patientId, dateStrQuery) { // dateStrQuery is DD/MM/YYYY
+    const listCont = document.getElementById('processList');
+    document.getElementById('selectedDayTitle').textContent = ` ${dateStrQuery}`; // Muestra DD/MM/YYYY
+
+    listCont.innerHTML = `<p class="muted">Buscando registros y resumen para <strong>${dateStrQuery}</strong>...</p>`;
+
+    // Calculamos el formato antiguo (YYYY-MM-DD) para la consulta de fallback
+    const dateStrQueryLegacy = formatLegacyDate(dateStrQuery);
+
+    try {
+        let registrosSnap;
+        let resumenSnap;
+
+        // --- INTENTO 1: CONSULTA CON EL NUEVO FORMATO (DD/MM/YYYY) ---
+        const registrosQueryCurrent = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", patientId),
+            where("tipoRegistro", "==", "registroDetallado"),
+            where("fecha", "==", dateStrQuery),
+            orderBy("createdAt", "asc")
+        );
+        registrosSnap = await getDocs(registrosQueryCurrent);
+        
+        const resumenQueryCurrent = query(
+            collection(db, "pacienteprogreso"),
+            where("pacienteId", "==", patientId),
+            where("tipoRegistro", "==", "resumenDiario"),
+            where("fecha", "==", dateStrQuery)
+        );
+        resumenSnap = await getDocs(resumenQueryCurrent);
+
+        // --- INTENTO 2: FALLBACK CON EL FORMATO ANTIGUO (YYYY-MM-DD) si no se encontró nada ---
+        if (registrosSnap.empty && resumenSnap.empty) {
+            
+            // 3. Registros Detallados (YYYY-MM-DD)
+            const registrosQueryLegacy = query(
+                collection(db, "pacienteprogreso"),
+                where("pacienteId", "==", patientId),
+                where("tipoRegistro", "==", "registroDetallado"),
+                where("fecha", "==", dateStrQueryLegacy),
+                orderBy("createdAt", "asc")
+            );
+            registrosSnap = await getDocs(registrosQueryLegacy);
+            
+            // 4. Resumen Diario (YYYY-MM-DD)
+            const resumenQueryLegacy = query(
+                collection(db, "pacienteprogreso"),
+                where("pacienteId", "==", patientId),
+                where("tipoRegistro", "==", "resumenDiario"),
+                where("fecha", "==", dateStrQueryLegacy)
+            );
+            resumenSnap = await getDocs(resumenQueryLegacy);
+        }
+
+        // Construir salida
+        let html = '';
+
+        // Mostrar resumen si existe (siempre mostrar cuando existe)
+        if (!resumenSnap.empty) {
+            const r = resumenSnap.docs[0].data();
+            html += `
+                <div style="margin-bottom:12px;" class="success-msg">
+                    <strong>Resumen del día</strong><br>
+                    Progreso: <strong>${r.porcentaje ?? 0}%</strong> · Tiempo total: <strong>${r.tiempoTotalMS ? formatTimeFromMS(r.tiempoTotalMS) : '—'}</strong><br>
+                    Día: <strong>${r.dia ?? '—'}</strong> · PlanId: <strong>${r.planId ?? '—'}</strong>
+                </div>
+            `;
+        }
+
+        // Si hay registros detallados
+        if (!registrosSnap.empty) {
+            // Agrupar por ejercicio
+            const recordsByExercise = {};
+            registrosSnap.docs.forEach(doc => {
+                const d = doc.data();
+                const key = (d.ejercicioId || 'anon') + '::' + (d.ejercicioNombre || d.nombreEjercicio || 'Ejercicio');
+                
+                if (!recordsByExercise[key]) {
+                    recordsByExercise[key] = { nombre: d.ejercicioNombre || d.nombreEjercicio || 'Ejercicio', records: [] };
+                }
+                
+                recordsByExercise[key].records.push(d);
+            });
+
+            for (const k in recordsByExercise) {
+                const ex = recordsByExercise[k];
+                html += `<div class="exercise-item">
+                            <div class="ex-header"><h4>${ex.nombre}</h4><div class="muted">${ex.records.length} registro(s)</div></div>
+                            <div class="records-container">`;
+                ex.records.forEach((r, i) => {
+                    const timeStr = r.tiempoTotalMS ? formatTimeFromMS(r.tiempoTotalMS) : (r.tiempoManual || '—'); 
+                    const timeStamp = r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'}) : '—';
+                    html += `<div class="record-detail">
+                                <div><strong>S:${r.series ?? '-'} R:${r.repeticiones ?? '-'}</strong><div style="font-size:12px;color:var(--muted);">P:${r.peso ?? '-' } kg</div></div>
+                                <div>
+                                    <div style="font-size:13px;">Tiempo: <strong>${timeStr}</strong></div>
+                                    <div style="font-size:13px;">Comentario: ${r.comentario ? escapeHtml(r.comentario) : '<span class="muted">Sin nota</span>'}</div>
+                                    <div class="timestamp">Registrado a las ${timeStamp}</div>
+                                </div>
+                            </div>`;
+                });
+                html += `</div></div>`;
+            }
+        } else {
+            // No hay registros detallados
+            if (resumenSnap.empty) {
+                html += `<div class="error-msg">No se encontraron registros ni resumen para ${dateStrQuery}.</div>`;
+            } else {
+                html += `<p class="muted" style="text-align:center; padding-top:10px;">El paciente finalizó el día (resumen guardado), pero no se encontraron registros detallados de ejercicios.</p>`;
+            }
+        }
+
+        listCont.innerHTML = html;
+
+        // Al cargar el día, marcar si hay registros (para UX: pintar un pequeño "registros" en marcador)
+        highlightDayWithRecords(dateStrQuery, !registrosSnap.empty);
+
+    } catch (err) {
+        console.error("Error al cargar progreso detallado:", err);
+        document.getElementById('processList').innerHTML = '<p class="error-msg">Error al buscar registros. Revisa la consola.</p>';
+    }
+}
+
+/* -----------------------------------------
+    Helpers: small UI updates
+------------------------------------------*/
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function highlightDayWithRecords(dateStrQuery, hasRecords) {
+    // encontrar el elemento del día
+    const el = document.querySelector(`.cal-day[data-date-query="${dateStrQuery}"]`);
+    if (!el) return;
+    const markerContainer = el.querySelector('.day-markers');
+    if (!markerContainer) return;
+    // si ya tiene completed, solo agregar records marker if necessary
+    if (hasRecords) {
+        // quitar 'none' si existe
+        const none = markerContainer.querySelector('.marker.none');
+        if (none) none.remove();
+        // si ya existe records marker, no duplicar
+        if (!markerContainer.querySelector('.marker.records')) {
+            markerContainer.insertAdjacentHTML('beforeend', `<span class="marker records" title="Registros de ejercicios"></span>`);
+        }
+    }
+}
+
+/* -----------------------------------------
+    Refrescar pacientes manualmente
+------------------------------------------*/
+function refreshPatients() {
+    loadAllPatients().then(() => {
+        // regen calendar to refresh markers if needed
+        generarCalendario();
+    });
+}
+
+/* -----------------------------------------
+    Selección de día desde HTML (onclick inline)
+    - definimos funciones globales para que onclick possa chamá-las
+------------------------------------------*/
+window.cambiarMes = cambiarMes;
+window.refreshPatients = refreshPatients; // Hacer refreshPatients global
+window.seleccionarDia = function(element, dia) {
+    // quitar active-day de todos menos hoy
+    Array.from(document.querySelectorAll('.cal-day')).forEach(el => {
+        if (!el.classList.contains('hoy')) el.classList.remove('active-day');
+    });
+    if (element) element.classList.add('active-day');
+
+    selectedDate = new Date(currentYear, currentMonth, dia);
+    // El formato de consulta es el que se muestra en el título
+    const dateStrQuery = formatQueryDate(selectedDate);
+    document.getElementById('selectedDayTitle').textContent = dateStrQuery; 
+
+    if (selectedPatientId) {
+        // Usar el formato DD/MM/YYYY para la consulta (el fallback se hace dentro de la función)
+        loadDetailedProgress(selectedPatientId, dateStrQuery); 
+    } else {
+        document.getElementById('processList').innerHTML = '<p class="muted">Seleccione un paciente para ver su progreso.</p>';
+    }
+};
+
+/* -----------------------------------------
+    INICIALIZACIÓN
+------------------------------------------*/
+(async function init() {
+    try {
+        // Seleccionar el día actual por defecto antes de cargar pacientes
+        const today = new Date();
+        currentYear = today.getFullYear();
+        currentMonth = today.getMonth();
+        selectedDate = new Date(currentYear, currentMonth, today.getDate()); 
+
+        generarCalendario();
+        await loadAllPatients();
+
+        // Seleccionar día hoy después de cargar pacientes (si se selecciona un paciente por defecto)
+        const todayEl = document.querySelector('.cal-day.hoy');
+        if (todayEl) {
+            // Asegurarse de que el día esté seleccionado en el UI y el progreso cargado
+            const day = new Date().getDate();
+            seleccionarDia(todayEl, day);
+        }
+    } catch (err) {
+        console.error("Fallo en init:", err);
+    }
+})();
+</script>
+
+</body>
+</html>

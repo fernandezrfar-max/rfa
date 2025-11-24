@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestión de Ejercicios y Rutinas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+
+  <!-- catálogo local (si existe) -->
+  <script src="catalogo.js"></script>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root{
+      --primary-green:#00A99D;
+      --secondary-blue:#0A73AD;
+      --text-dark:#2c3e50;
+      --text-light:#7f8c8d;
+      --bg-light:#ecf0f1;
+    }
+    body{font-family:'Poppins',sans-serif;margin:0;background:#f5f7f8;color:var(--text-dark)}
+    .app-wrapper{max-width:920px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+    header{background:var(--secondary-blue);color:#fff;padding:16px;font-weight:700;text-align:center}
+    .sub-header{background:#1a8cc6;color:#fff;padding:10px;text-align:center}
+    .container{padding:20px}
+    .search-box{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#fbfcfd;border:1px solid #e6eef5}
+    .search-box input{flex:1;padding:8px;border:0;outline:none}
+    .add-exercise-button{display:inline-flex;align-items:center;gap:8px;padding:10px;border-radius:8px;border:1px dashed var(--primary-green);color:var(--primary-green);cursor:pointer;margin-top:12px}
+    .section-title{font-size:18px;margin:18px 0 10px;font-weight:700;border-left:4px solid var(--primary-green);padding-left:10px}
+    .accordion-item{background:#fff;border-radius:10px;border:1px solid #e6eef5;margin-bottom:12px;overflow:hidden}
+    .accordion-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer}
+    .accordion-body{max-height:0;overflow:hidden;transition:max-height .32s ease;padding:0 16px}
+    .exercise-card{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px dashed #f0f4f6}
+    .exercise-gif{width:84px;height:64px;object-fit:cover;border-radius:8px;background:#eef4f7}
+    .exercise-title{font-weight:700;color:var(--secondary-blue)}
+    .action-btn{color:var(--primary-green);cursor:pointer;font-weight:700;font-size:13px}
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120}
+    .modal{background:#fff;border-radius:12px;padding:18px;width:100%;max-width:820px;box-shadow:0 8px 30px rgba(0,0,0,0.15)}
+    .modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .modal input,.modal textarea,.modal select{width:100%;padding:10px;border-radius:8px;border:1px solid #d7e6ee;box-sizing:border-box}
+    .modal .footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+    .btn{padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn.ghost{background:#fff;border:1px solid #ddd}
+    .btn.primary{background:var(--primary-green);color:#fff;border:0}
+    .small{font-size:13px;color:#666}
+    .group-other-input{display:none}
+    .resource-preview{margin-top:10px}
+    .resource-preview img,.resource-preview video{max-width:100%;border-radius:8px}
+    .resource-iframe{width:100%;height:360px;border:0;border-radius:8px}
+    .plan-card{border:1px solid #e6eef5;padding:12px;border-radius:8px;margin-bottom:12px}
+
+    /* floating plan FAB */
+    .floating-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 24px;
+      background-color: var(--primary-green);
+      color: white;
+      padding: 14px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      cursor: pointer;
+      z-index: 200;
+      display:flex;gap:8px;align-items:center;
+    }
+
+    /* simple toast style */
+    .cg-toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary-green);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      z-index: 9999;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+
+    /* day chips (for plan modal) */
+    .day-selector-grid {display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .day-chip {padding:10px;border-radius:8px;background:#f1f5f7;border:0;cursor:pointer;font-weight:600}
+    .day-chip.active {background:var(--primary-green);color:#fff}
+
+      .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    z-index: 999;
+  }
+
+  .bottom-nav .nav-item {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .bottom-nav .nav-item img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .bottom-nav .nav-item.active {
+    color: var(--primary-green);
+  }
+
+  .floating-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 22px;
+  background: var(--primary-green);
+  color: white;
+  padding: 14px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  font-weight: 600;
+  transition: width .25s ease, padding .2s ease, background .2s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 52px;              /* ← cerrado */
+}
+
+.floating-btn i {
+  font-size: 20px;
+  min-width: 20px;
+}
+
+.floating-btn span {
+  margin-left: 10px;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+/* Estado expandido */
+.floating-btn:hover,
+.floating-btn.expanded {
+  width: 210px;
+  padding: 14px 18px;
+}
+
+.floating-btn:hover span,
+.floating-btn.expanded span {
+  opacity: 1;
+}
+
+body, .app-wrapper {
+  padding-bottom: 100px;
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <header>Lista de Entrenamientos</header>
+    <div class="sub-header">Gestión de Rutinas</div>
+
+    <div class="container">
+      <div class="search-box">
+        <i class="fas fa-search" style="color:var(--text-light)"></i>
+        <input id="searchInput" placeholder="Buscar ejercicio, método o grupo..." />
+        <button class="add-exercise-button" onclick="openExerciseModal()"><i class="fas fa-plus-circle"></i> Agregar Ejercicio</button>
+      </div>
+
+      <h3 class="section-title">Catálogo de Ejercicios Disponibles</h3>
+      <div id="globalExerciseCatalog"></div>
+
+      <hr style="margin:20px 0;border:0;height:1px;background:#eef4f7">
+
+      <h3 class="section-title" style="border-left:4px solid #FF9800">Planes Asignados</h3>
+      <div id="assignedPlansContainer"><p class="small">Cargando planes...</p></div>
+    </div>
+  </div>
+
+  <!-- floating button: Asignar Nuevo Plan -->
+ <div class="floating-btn" onclick="toggleFab()">
+  <i class="fas fa-plus"></i>
+  <span>Asignar Nuevo Plan</span>
+</div>
+
+
+  <!-- MODAL: Agregar Ejercicio -->
+  <div class="modal-bg" id="exerciseModalBg">
+    <div class="modal">
+      <h3>Agregar Ejercicio al Catálogo</h3>
+
+      <div style="margin-bottom:8px" class="small">También puedes <strong>seleccionar un ejercicio existente</strong> para reutilizar y editarlo antes de guardar.</div>
+
+      <div style="margin-bottom:10px">
+        <label class="small">Ejercicios existentes</label>
+        <select id="existingExercisesSelect">
+          <option value="">— Seleccionar para prellenar —</option>
+        </select>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label class="small">Nombre</label>
+          <input id="newExerciseName" placeholder="Nombre del Ejercicio (ej: Flexión de pecho)"/>
+        </div>
+
+        <div>
+          <label class="small">Grupo muscular</label>
+          <select id="newExerciseGroup">
+            <option value="">— Cargando grupos —</option>
+          </select>
+
+          <!-- input para cuando seleccionan 'Otro' -->
+          <div class="group-other-input" id="groupOtherWrap" style="margin-top:8px">
+            <input id="newExerciseGroupOther" placeholder="Escribe el grupo muscular..." />
+          </div>
+        </div>
+
+        <div style="grid-column:1/3">
+          <label class="small">URL del recurso (imagen, gif, video, YouTube, Vimeo, etc.)</label>
+          <input id="newExerciseGif" placeholder="https://..." />
+          <div class="small" style="margin-top:6px;color:#666">Acepta cualquier URL; si es imagen/video se mostrará embebido, si es YouTube/Vimeo se incrustará.</div>
+        </div>
+
+        <div style="grid-column:1/3">
+          <label class="small">Descripción detallada del método</label>
+          <textarea id="newExerciseMethod" rows="4" placeholder="Instrucciones, tips, variantes..."></textarea>
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <div class="small">Vista previa del recurso:</div>
+        <div id="resourcePreview" class="resource-preview"></div>
+      </div>
+
+      <div class="footer">
+        <button class="btn ghost" onclick="closeExerciseModal()">Cancelar</button>
+        <button class="btn primary" onclick="saveNewExercise()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Nuevo Plan -->
+  <div class="modal-bg" id="planModalBg">
+    <div class="modal">
+      <h3>Nuevo Plan de Entrenamiento</h3>
+      <input type="text" id="planName" placeholder="Nombre del nuevo plan" style="margin-bottom:8px" />
+      <select id="planType" class="modal-select" style="margin-bottom:8px">
+        <option value="">O selecciona un tipo...</option>
+        <option value="Funcional">Plan Funcional</option>
+        <option value="Basico">Plan Básico</option>
+        <option value="Inicial">Plan Inicial</option>
+        <option value="Intermedio">Plan Intermedio</option>
+        <option value="Fuerza">Plan Fuerza</option>
+        <option value="Resistencia">Plan Resistencia</option>
+      </select>
+
+      <div class="small" style="margin-bottom:6px">Selecciona los días de entrenamiento:</div>
+      <div class="day-selector-grid" id="planDayGrid" style="margin-bottom:12px">
+        <button class="day-chip">Día 1</button>
+        <button class="day-chip">Día 2</button>
+        <button class="day-chip">Día 3</button>
+        <button class="day-chip">Día 4</button>
+        <button class="day-chip">Día 5</button>
+        <button class="day-chip">Día 6</button>
+        <button class="day-chip">Día 7</button>
+      </div>
+
+      <div style="text-align:right">
+        <button class="btn ghost" onclick="closePlanModal()">Cancelar</button>
+        <button class="btn primary" onclick="saveNewPlan()">Crear Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Ver detalles / recurso -->
+  <div class="modal-bg" id="detailsModalBg">
+    <div class="modal">
+      <h3 id="detail-title"></h3>
+      <div id="detail-group" class="small"></div>
+      <div style="margin-top:10px" id="detail-resource"></div>
+      <p id="detail-method" style="margin-top:12px;white-space:pre-wrap"></p>
+      <div style="text-align:right;margin-top:12px"><button class="btn ghost" onclick="closeDetailsModal()">Cerrar</button></div>
+    </div>
+  </div>
+
+<script>
+/* ========== FIREBASE ========== */
+const firebaseConfig = {
+  apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
+  authDomain: "rfa-2025.firebaseapp.com",
+  projectId: "rfa-2025",
+  storageBucket: "rfa-2025.firebasestorage.app",
+  messagingSenderId: "113686586280",
+  appId: "1:113686586280:web:223b4277f53ca0607c339d",
+  measurementId: "G-T7F5V4WGY9"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ========== UTIL ========== */
+function escapeHtml(s){ if (s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function el(id){ return document.getElementById(id); }
+function showModal(id){ el(id).style.display='flex'; }
+function hideModal(id){ el(id).style.display='none'; }
+
+/* ========== TOAST (para notificaciones) ========== */
+function toast(msg) {
+  try {
+    const t = document.createElement('div');
+    t.className = 'cg-toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    // trigger transition
+    requestAnimationFrame(()=> t.style.opacity = '1');
+    setTimeout(()=> { t.style.opacity = '0'; setTimeout(()=> t.remove(), 220); }, 2000);
+  } catch(e) {
+    alert(msg);
+  }
+}
+
+/* ========== DETECCIÓN TIPO DE URL Y PREVISUALIZACIÓN ========== */
+function isYouTube(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be');
+  } catch(e){ return false; }
+}
+function isVimeo(url){
+  try { const u=new URL(url); return u.hostname.includes('vimeo.com'); } catch(e){ return false; }
+}
+function isImage(url){
+  return /\.(gif|png|jpe?g|webp|bmp|svg)(\?.*)?$/i.test(url);
+}
+function isVideoFile(url){
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url);
+}
+
+// crea elemento embebido según url y lo coloca en contenedor
+function renderResourceTo(container, url){
+  container.innerHTML = '';
+  if (!url) { container.innerHTML = '<div class="small">Sin recurso</div>'; return; }
+
+  // YouTube
+  if (isYouTube(url)) {
+    // convertir a embed
+    let videoId = null;
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtu.be')) {
+        videoId = u.pathname.slice(1);
+      } else {
+        videoId = u.searchParams.get('v');
+      }
+    } catch(e){}
+    if (videoId) {
+      const iframe = document.createElement('iframe');
+      iframe.className = 'resource-iframe';
+      iframe.src = `https://www.youtube.com/embed/${videoId}`;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.setAttribute('allowfullscreen','');
+      container.appendChild(iframe);
+      return;
+    }
+  }
+
+  // Vimeo
+  if (isVimeo(url)) {
+    // Vimeo embed: take last path piece as id
+    try {
+      const u = new URL(url);
+      const id = u.pathname.split('/').filter(Boolean).pop();
+      if (id) {
+        const iframe = document.createElement('iframe');
+        iframe.className = 'resource-iframe';
+        iframe.src = `https://player.vimeo.com/video/${id}`;
+        iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+        iframe.setAttribute('allowfullscreen','');
+        container.appendChild(iframe);
+        return;
+      }
+    } catch(e){}
+  }
+
+  // Image
+  if (isImage(url)) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Recurso';
+    img.className = 'exercise-gif';
+    img.onerror = ()=>{ container.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Abrir recurso</a>`; };
+    container.appendChild(img);
+    return;
+  }
+
+  // Video file
+  if (isVideoFile(url)) {
+    const v = document.createElement('video');
+    v.controls = true;
+    v.src = url;
+    v.className = 'exercise-gif';
+    v.onerror = ()=>{ container.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Abrir recurso</a>`; };
+    container.appendChild(v);
+    return;
+  }
+
+  // Fallback: mostrar botón para abrir el link (acepta cualquier URL)
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.textContent = 'Abrir recurso';
+  a.className = 'btn ghost';
+  container.appendChild(a);
+}
+
+/* ========== CATALOGO: leer Firestore / local / combinar ========== */
+async function fetchFirestoreExercises(){
+  try {
+    const snap = await db.collection('ejercicios').orderBy('creadoEn','desc').get();
+    const arr = [];
+    snap.forEach(doc=>{
+      const d = doc.data();
+      arr.push({
+        id: doc.id,
+        nombre: d.nombre || '',
+        grupo: d.grupo || 'General',
+        gif: d.gif || '',
+        metodo: d.metodo || ''
+      });
+    });
+    return arr;
+  } catch(e){
+    console.warn('Error cargando ejercicios firestore', e);
+    return [];
+  }
+}
+
+function uniq(arr){
+  return Array.from(new Set(arr));
+}
+
+// renderiza catalogo agrupado por grupo
+function loadExercisesCatalog(catalog){
+  const container = el('globalExerciseCatalog');
+  container.innerHTML = '';
+  const q = (el('searchInput').value || '').toLowerCase();
+
+  // agrupar
+  const groups = {};
+  (catalog||[]).forEach(ex=>{
+    const g = (ex.grupo || 'General').toString();
+    // filtro por búsqueda
+    if (q) {
+      const hay = (ex.nombre||'').toLowerCase().includes(q) || (ex.metodo||'').toLowerCase().includes(q) || g.toLowerCase().includes(q);
+      if (!hay) return;
+    }
+    if (!groups[g]) groups[g]=[];
+    groups[g].push(ex);
+  });
+
+  if (Object.keys(groups).length === 0) {
+    container.innerHTML = '<div class="small">No se encontraron ejercicios.</div>';
+    return;
+  }
+
+  for (const g of Object.keys(groups).sort()) {
+    const exercises = groups[g];
+    const item = document.createElement('div'); item.className='accordion-item';
+    const header = document.createElement('div'); header.className='accordion-header';
+    header.innerHTML = `<div style="font-weight:700">${escapeHtml(g)} (${exercises.length})</div><div style="color:var(--text-light)"><i class="fas fa-chevron-down"></i></div>`;
+    const body = document.createElement('div'); body.className='accordion-body';
+
+    exercises.forEach(ex=>{
+      const card = document.createElement('div'); card.className='exercise-card';
+      // preview thumbnail: try to show image or video thumbnail; else placeholder
+      const thumbWrap = document.createElement('div');
+      if (isImage(ex.gif)) {
+        const img = document.createElement('img'); img.src = ex.gif; img.className='exercise-gif';
+        img.onerror = ()=> img.src = 'https://via.placeholder.com/84x64?text=IMG';
+        thumbWrap.appendChild(img);
+      } else if (isVideoFile(ex.gif)) {
+        const vid = document.createElement('video'); vid.src=ex.gif; vid.className='exercise-gif';
+        vid.muted=true; vid.oncanplay = ()=>{}; vid.onerror = ()=> {thumbWrap.innerHTML = '<div style="width:84px;height:64px;background:#eef4f7;border-radius:8px"></div>'};
+        thumbWrap.appendChild(vid);
+      } else {
+        const ph = document.createElement('div'); ph.style.width='84px'; ph.style.height='64px'; ph.style.background='#eef4f7'; ph.style.borderRadius='8px'; ph.style.display='flex'; ph.style.alignItems='center'; ph.style.justifyContent='center'; ph.innerHTML='<i class="fas fa-link" style="color:#b9cfd6"></i>';
+        thumbWrap.appendChild(ph);
+      }
+
+      const info = document.createElement('div'); info.style.flex='1';
+      const title = document.createElement('div'); title.className='exercise-title'; title.textContent = ex.nombre || '(sin nombre)';
+      const snippet = document.createElement('div'); snippet.className='small'; snippet.style.marginTop='6px'; snippet.textContent = (ex.metodo||'').slice(0,160);
+      const actions = document.createElement('div'); actions.style.marginTop='8px';
+      const btnDetails = document.createElement('span'); btnDetails.className='action-btn'; btnDetails.style.marginRight='10px'; btnDetails.textContent='Ver Detalles';
+      btnDetails.onclick = ()=> openDetailsFromExercise(ex);
+      actions.appendChild(btnDetails);
+
+      info.appendChild(title); info.appendChild(snippet); info.appendChild(actions);
+
+      card.appendChild(thumbWrap); card.appendChild(info);
+      body.appendChild(card);
+    });
+
+    item.appendChild(header); item.appendChild(body);
+    container.appendChild(item);
+
+    header.addEventListener('click', ()=>{
+      document.querySelectorAll('.accordion-header').forEach(h=>{
+        if (h!==header) {
+          h.classList.remove('active');
+          const next = h.nextElementSibling; if (next) next.style.maxHeight=0;
+        }
+      });
+      header.classList.toggle('active');
+      if (header.classList.contains('active')) body.style.maxHeight = body.scrollHeight + 'px';
+      else body.style.maxHeight = 0;
+    });
+  }
+}
+
+/* ========== RENDER CATALOGO COMPLETO (catalogo.js + firestore) ========== */
+async function renderFullCatalog(){
+  const base = Array.isArray(window.exerciseCatalog) ? window.exerciseCatalog.slice() : [];
+  const fs = await fetchFirestoreExercises();
+  const full = [...base, ...fs];
+  // prefill selects: grupos + ejercicios existentes
+  populateGroupSelects(full);
+  populateExistingExercisesSelect(full);
+  loadExercisesCatalog(full);
+  return full;
+}
+
+/* ========== POPULADORES DEL MODAL ========== */
+function populateGroupSelects(fullCatalog){
+  // extraer grupos ordenados
+  const groups = uniq((fullCatalog||[]).map(e=> (e.grupo||'General').toString().trim()).filter(Boolean)).sort();
+  const sel = el('newExerciseGroup');
+  sel.innerHTML = '';
+  // opción vacía
+  const optEmpty = document.createElement('option'); optEmpty.value=''; optEmpty.textContent='— Seleccionar grupo —'; sel.appendChild(optEmpty);
+  groups.forEach(g=>{
+    const o=document.createElement('option'); o.value=g; o.textContent=g; sel.appendChild(o);
+  });
+  const oOther = document.createElement('option'); oOther.value='__other__'; oOther.textContent='Otro...'; sel.appendChild(oOther);
+  // escuchar cambio para mostrar input 'otro'
+  sel.onchange = ()=>{
+    if (sel.value === '__other__') {
+      el('groupOtherWrap').style.display = 'block';
+    } else {
+      el('groupOtherWrap').style.display = 'none';
+    }
+  };
+}
+
+function populateExistingExercisesSelect(fullCatalog){
+  const sel = el('existingExercisesSelect');
+  sel.innerHTML = '<option value="">— Seleccionar para prellenar —</option>';
+  (fullCatalog||[]).forEach((ex, idx)=>{
+    const o = document.createElement('option');
+    o.value = idx; // referencia por índice; se obtendrá del array que renderFullCatalog retorna/usa
+    o.textContent = `${ex.nombre} — ${ex.grupo || 'General'}`;
+    sel.appendChild(o);
+  });
+  // almacenamos array en dataset para referenciar al seleccionar
+  sel.fullCatalogCache = fullCatalog;
+  sel.onchange = ()=>{
+    const v = sel.value;
+    if (v === '') {
+      // limpiar
+      el('newExerciseName').value=''; el('newExerciseGroup').value=''; el('newExerciseGroupOther').value=''; el('newExerciseGif').value=''; el('newExerciseMethod').value='';
+      el('groupOtherWrap').style.display = 'none';
+      el('resourcePreview').innerHTML = '';
+      return;
+    }
+    const ex = sel.fullCatalogCache[Number(v)];
+    if (!ex) return;
+    el('newExerciseName').value = ex.nombre || '';
+    // set group: if group matches existing option, put it; else put other and fill other input
+    const selGroup = el('newExerciseGroup');
+    const found = Array.from(selGroup.options).find(o=> o.value === (ex.grupo||''));
+    if (found) {
+      selGroup.value = found.value;
+      el('groupOtherWrap').style.display = 'none';
+    } else {
+      // seleccionar otro y mostrar
+      selGroup.value = '__other__';
+      el('groupOtherWrap').style.display = 'block';
+      el('newExerciseGroupOther').value = ex.grupo || '';
+    }
+    el('newExerciseGif').value = ex.gif || '';
+    el('newExerciseMethod').value = ex.metodo || '';
+    renderResourceTo(el('resourcePreview'), ex.gif || '');
+  };
+}
+
+/* ========== Vista previa dinámica del recurso en el modal ========== */
+el('newExerciseGif').addEventListener('input', ()=> {
+  const url = el('newExerciseGif').value.trim();
+  renderResourceTo(el('resourcePreview'), url);
+});
+
+/* ========== ABRIR/CERRAR MODAL Y LIMPIEZA ========== */
+function openExerciseModal(){
+  el('existingExercisesSelect').value = '';
+  el('newExerciseName').value=''; el('newExerciseGif').value=''; el('newExerciseMethod').value=''; el('newExerciseGroupOther').value='';
+  el('resourcePreview').innerHTML='';
+  el('groupOtherWrap').style.display='none';
+  showModal('exerciseModalBg');
+}
+function closeExerciseModal(){
+  hideModal('exerciseModalBg');
+  // limpiar campos
+  el('newExerciseName').value=''; el('newExerciseGif').value=''; el('newExerciseMethod').value=''; el('newExerciseGroupOther').value='';
+  el('resourcePreview').innerHTML='';
+  el('existingExercisesSelect').value='';
+}
+
+/* ========== GUARDAR EJERCICIO EN FIRESTORE ========== */
+async function saveNewExercise(){
+  const name = el('newExerciseName').value.trim();
+  let group = el('newExerciseGroup').value;
+  const groupOther = el('newExerciseGroupOther').value.trim();
+  const gif = el('newExerciseGif').value.trim();
+  const metodo = el('newExerciseMethod').value.trim();
+
+  if (!name) { alert('Escribe un nombre'); return; }
+  if (!group || (group === '__other__' && !groupOther)) { alert('Selecciona o escribe un grupo muscular'); return; }
+
+  if (!gif) { if (!confirm('No has puesto URL de recurso. Deseas continuar sin recurso?')) return; }
+
+  if (group === '__other__') group = groupOther;
+
+  const payload = {
+    nombre: name,
+    grupo: group,
+    gif: gif,
+    metodo: metodo,
+    creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection('ejercicios').add(payload);
+    toast('Ejercicio guardado en la base de datos.');
+    closeExerciseModal();
+    // recargar catálogo
+    await renderFullCatalog();
+  } catch (e) {
+    console.error('Error guardando ejercicio:', e);
+    alert('Error al guardar en la base de datos. Revisa consola.');
+  }
+}
+
+/* ========== DETALLES (modal) ========== */
+function openDetailsFromExercise(ex){
+  el('detail-title').textContent = ex.nombre || '(sin nombre)';
+  el('detail-group').textContent = 'Grupo: ' + (ex.grupo || 'General');
+  el('detail-method').textContent = ex.metodo || '';
+  el('detail-resource').innerHTML = '';
+  renderResourceTo(el('detail-resource'), ex.gif || '');
+  showModal('detailsModalBg');
+}
+function closeDetailsModal(){ hideModal('detailsModalBg'); }
+
+/* ========== PLANES (guardar en Firestore + leer + UI) ========== */
+
+// helper: leer plan guardado en localStorage por editar_rutina.html
+function loadLocalPlan(planId) {
+  try {
+    const raw = localStorage.getItem('plan_local__' + planId);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.warn('Error leyendo local plan:', e);
+    return null;
+  }
+}
+
+function openPlanModal() {
+  // reset modal fields
+  el('planName').value = '';
+  el('planType').selectedIndex = 0;
+  document.querySelectorAll('.day-chip').forEach(ch => ch.classList.remove('active'));
+  showModal('planModalBg');
+}
+function closePlanModal() {
+  hideModal('planModalBg');
+}
+
+async function saveNewPlan() {
+  const planNameInput = el('planName');
+  const planTypeInput = el('planType');
+  const activeDays = Array.from(document.querySelectorAll('.day-chip.active')).map(chip => chip.textContent);
+
+  const inputName = planNameInput.value.trim();
+  const selectedType = planTypeInput.options[planTypeInput.selectedIndex].text;
+
+  let finalPlanName = '';
+  if (inputName) finalPlanName = inputName;
+  else if (planTypeInput.value) finalPlanName = selectedType;
+
+  if (!finalPlanName || finalPlanName === 'O selecciona un tipo...') {
+    alert("Por favor, ingresa un nombre para el plan o selecciona un tipo en el menú desplegable.");
+    return;
+  }
+
+  const planData = {
+    nombre: finalPlanName,
+    tipo: planTypeInput.value || "Tipo no especificado",
+    diasAsignados: activeDays,
+    totalEjercicios: 0,
+    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  try {
+    await db.collection("planes").add(planData);
+    toast(`Plan "${finalPlanName}" creado.`);
+    closePlanModal();
+    loadAssignedPlans();
+  } catch (err) {
+    console.error('Error al guardar plan:', err);
+    alert('Error al crear el plan. Revisa consola.');
+  }
+}
+
+async function loadAssignedPlans(){
+  const container = el('assignedPlansContainer');
+  container.innerHTML = '<p class="small">Cargando planes...</p>';
+
+  try {
+    const snapshot = await db.collection("planes").orderBy("fechaCreacion", "desc").get();
+    container.innerHTML = '';
+
+    if (snapshot.empty) {
+      container.innerHTML = '<div class="small">Aún no hay planes creados.</div>';
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const plan = doc.data();
+      const planId = doc.id;
+
+      // try localStorage detailed plan (from editar_rutina)
+      const localPlan = loadLocalPlan(planId);
+
+      let totalExercises = plan.totalEjercicios || 0;
+      let sessionsHtmlPieces = [];
+
+      if (localPlan && Array.isArray(localPlan.days)) {
+        let tot = 0;
+        for (const day of localPlan.days) {
+          const cnt = (localPlan.exercisesByDay && Array.isArray(localPlan.exercisesByDay[day])) ? localPlan.exercisesByDay[day].length : 0;
+          tot += cnt;
+          sessionsHtmlPieces.push(`<div class="plan-session-detail"><i class="far fa-clock"></i> ${escapeHtml(day)} | ${cnt} ejercicios</div>`);
+        }
+        totalExercises = tot;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'plan-card';
+      card.innerHTML = `
+        <div style="font-weight:700">${escapeHtml(plan.nombre||'(sin nombre)')} ${plan.tipo ? '('+escapeHtml(plan.tipo)+')' : ''}</div>
+        <div class="small">Días: ${Array.isArray(plan.diasAsignados) && plan.diasAsignados.length ? escapeHtml(plan.diasAsignados.join(', ')) : '—'}</div>
+        <div style="margin-top:8px"><strong>Total de ejercicios:</strong> ${totalExercises}</div>
+        <div style="margin-top:8px">${sessionsHtmlPieces.join('')}</div>
+        <div style="margin-top:10px;text-align:right">
+          <button class="btn ghost" onclick="deletePlan('${planId}')"><i class="fas fa-trash-alt"></i> Eliminar</button>
+          <button class="btn primary" onclick="editRoutine('${planId}')"><i class="fas fa-pencil-alt"></i> Editar Rutina</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+  } catch (e) {
+    console.error('Error al cargar planes:', e);
+    container.innerHTML = '<div class="small" style="color:#c00">Error al cargar planes</div>';
+  }
+}
+
+function deletePlan(planId) {
+  if (!confirm('¿Estás seguro que quieres eliminar este plan?')) return;
+  db.collection('planes').doc(planId).delete().then(()=> {
+    toast('Plan eliminado.');
+    loadAssignedPlans();
+  }).catch(e=> {
+    console.error(e);
+    alert('Error al eliminar plan.');
+  });
+}
+
+function editRoutine(planId){
+  // navigate to editar_rutina.html with planId query
+  window.location.href = `editar_rutina.html?planId=${planId}`;
+}
+
+/* ========== INICIALIZACIÓN ========== */
+document.addEventListener('DOMContentLoaded', async () => {
+  // day chips behavior
+  document.querySelectorAll('.day-chip').forEach(chip => chip.addEventListener('click', ()=> chip.classList.toggle('active')));
+
+  // render combined catalog
+  await renderFullCatalog();
+
+  // load planes
+  loadAssignedPlans();
+});
+
+// search input
+el('searchInput').addEventListener('input', () => renderFullCatalog());
+
+</script>
+
+<script>
+  function toggleFab() {
+    const btn = document.querySelector('.floating-btn');
+    btn.classList.toggle('expanded');
+  }
+</script>
+
+
+<div class="bottom-nav">
+  <a href="admin_dashboard.html" class="nav-item">
+    <img src="logo.png" />
+    <br>Dashboard
+  </a>
+
+  <a href="pacientes.html" class="nav-item">
+    <img src="logo.png" />
+    <br>Pacientes
+  </a>
+
+  <a href="ejercicios.html" class="nav-item active">
+    <img src="logo.png" style="transform:rotate(45deg);" />
+    <br>Ejercicios
+  </a>
+</div>
+</body>
+</html>

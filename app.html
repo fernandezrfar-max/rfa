@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido(a) RFA - Inicio de Sesión</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="app.css">
+
+    <style>
+        body, input, button, label, p, h2 { 
+            /* Se mantiene el estilo de fuente para texto normal */
+            font-family: 'Poppins', sans-serif !important;
+        }
+        
+        /* 💡 CORRECCIÓN APLICADA: 
+           Se eliminó la línea "i { font-family: "Font Awesome 6 Free" !important; }" 
+           para permitir que Font Awesome use automáticamente la fuente correcta (Brands) 
+           para los iconos FAB (fa-google, fa-apple, fa-facebook-f).
+        */
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+
+        <div class="logo-section">
+            <img src="logo.png" alt="Logo RFA" class="logo-image">
+        </div>
+
+        <h2 class="welcome-title"><span class="rfa-highlight">Bienvenido(a) RFA.</span></h2>
+        <p class="subtitle">Ingresa tus credenciales para continuar</p>
+
+        <form class="login-form" id="loginForm">
+            <div class="input-group">
+                <i class="fas fa-user icon"></i>
+                <input type="text" id="email" placeholder="Usuario o Correo" required>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-lock icon"></i>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+            </div>
+
+            <button type="submit" class="login-button">INICIAR SESIÓN</button>
+        </form>
+
+        <div class="social-divider">O accede con</div>
+
+        <div class="social-login">
+            <button class="social-icon google"><i class="fab fa-google"></i></button>
+            <button class="social-icon apple"><i class="fab fa-apple"></i></button>
+            <button class="social-icon facebook"><i class="fab fa-facebook-f"></i></button>
+        </div>
+
+    </div>
+
+    <div id="loadingScreen" style="
+        position:fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(255,255,255,0.95);
+        z-index:9999;
+        display:none;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;">
+        
+        <div class="spinner" style="
+            width:60px; height:60px;
+            border:6px solid #ccc;
+            border-top-color:#008080;
+            border-radius:50%;
+            animation:spin 0.9s linear infinite;
+            margin-bottom:20px;"></div>
+
+        <h3 style="color:#008080;font-size:20px;">Cargando app...</h3>
+        <p style="color:#555;margin-top:5px;font-size:15px;">Espera un momento — RFA</p>
+    </div>
+
+    <style>
+        @keyframes spin { 
+            from { transform:rotate(0deg); } 
+            to  { transform:rotate(360deg); } 
+        }
+    </style>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { 
+        getFirestore, collection, query, where, getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
+      authDomain: "rfa-2025.firebaseapp.com",
+      projectId: "rfa-2025",
+      storageBucket: "rfa-2025.firebasestorage.app",
+      messagingSenderId: "113686586280",
+      appId: "1:113686586280:web:223b4277f53ca0607c339d",
+      measurementId: "G-T7F5V4WGY9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const loginForm = document.getElementById("loginForm");
+    const loading = document.getElementById("loadingScreen");
+
+    loginForm.addEventListener("submit", loginPaciente);
+
+    async function loginPaciente(e){
+        e.preventDefault();
+        loading.style.display = "flex";
+
+        const email = document.getElementById("email").value.trim();
+        const pass  = document.getElementById("password").value.trim();
+
+        // ✔ ADMIN FIJO
+        if(email === "ricardofernandez@gmail.com" && pass === "ricardo.!16"){
+            window.location.href = "admin_dashboard.html";
+            return;
+        }
+
+        try {
+            const ref = collection(db, "pacientes");
+
+            // 🔥 Buscar por correo o usuario
+            const qCorreo = query(ref, where("correo", "==", email));
+            const qUsuario = query(ref, where("usuario", "==", email));
+
+            const snapCorreo = await getDocs(qCorreo);
+            const snapUsuario = await getDocs(qUsuario);
+
+            let resultados = [];
+
+            snapCorreo.forEach(d => resultados.push(d));
+            snapUsuario.forEach(d => resultados.push(d));
+
+            if(resultados.length === 0){
+                loading.style.display = "none";
+                alert("⚠ No tienes un registro como paciente en RFA.");
+                return;
+            }
+
+            let pacienteID = null;
+            let isValid = false;
+
+            resultados.forEach(docSnap => {
+                const d = docSnap.data();
+                
+                if(d.contrasena === pass){
+                    isValid = true;
+                    pacienteID = docSnap.id;
+                }
+            });
+
+            if(!isValid){
+                loading.style.display = "none";
+                alert("❌ Contraseña incorrecta.");
+                return;
+            }
+
+            // ✔ LOGIN OK → PASA A LA APP DEL PACIENTE
+            window.location.href = `paginapaciente.html?id=${pacienteID}`;
+        }
+        catch(err){
+            console.error(err);
+            alert("Error iniciando sesión");
+            loading.style.display = "none";
+        }
+    }
+
+    // Mostrar/Ocultar contraseña
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+
+    togglePassword.addEventListener("click", () => {
+        const type = passwordInput.type === "password" ? "text" : "password";
+        passwordInput.type = type;
+        togglePassword.classList.toggle("fa-eye-slash");
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administrador</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f6f6f6;
+    }
+    header {
+      background: #009688;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+      position: sticky;
+      top: 0;
+    }
+    .container {
+      padding: 20px;
+      text-align: center;
+      padding-bottom: 120px;
+    }
+    .logo img {
+      width: 150px;
+      margin: 20px auto;
+    }
+    h2 {
+      color: #00695c;
+      margin-bottom: 5px;
+    }
+
+    .btn-plan {
+      background: #1976d2;
+      color: white;
+      padding: 18px 25px;
+      border-radius: 25px;
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      margin: 10px auto 30px auto;
+      font-size: 17px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .stats-title {
+      text-align: left;
+      font-weight: bold;
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .card {
+      padding: 25px;
+      border-radius: 15px;
+      color: white;
+      text-align: center;
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .c1 { background: linear-gradient(135deg, #2196f3, #1565c0); }
+    .c2 { background: linear-gradient(135deg, #ab47bc, #7b1fa2); }
+    .c3 { background: linear-gradient(135deg, #43a047, #2e7d32); }
+    .c4 { background: linear-gradient(135deg, #ff9800, #ef6c00); }
+
+    .subtitle-left {
+      text-align: left;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 25px;
+    }
+
+    .calendar-btn {
+      margin-top: 40px;
+      padding: 18px 25px;
+      border-radius: 25px;
+      border: 2px solid #00695c;
+      color: #00695c;
+      display: block;
+      width: 100%;
+      max-width: 320px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      background: #ffffff;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #fff;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+      z-index: 20;
+    }
+
+    .nav-item {
+      text-align: center;
+      color: #00695c;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .nav-item img {
+      width: 22px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <header style="display:flex; justify-content:space-between; align-items:center;">
+  <span>Panel de Administrador</span>
+
+  <a href="app.html" 
+     style="
+        background:#e53935;
+        color:white;
+        padding:8px 15px;
+        border-radius:8px;
+        text-decoration:none;
+        font-size:14px;
+     ">
+    Salir
+  </a>
+</header>
+
+  <div class="container">
+    <div class="logo">
+      <img src="logo.png" alt="logo" />
+    </div>
+
+    <h2>MD. DR. RICARDO FERNÁNDEZ AMAYA</h2>
+
+    <p style="text-align:left;font-size:18px;font-weight:bold;margin-top:20px;">
+      Accede a Planes de Entrenamiento
+    </p>
+
+    <a href="ejercicios.html" class="btn-plan">🔧 Plan de Entrenamiento</a>
+
+    <p class="stats-title">📊 Estadísticas Clave</p>
+
+    <div class="stats-grid">
+      <div class="card c1">Pacientes<br><span id="pacientes">-</span></div>
+      <div class="card c2">Planes Activos<br><span id="planes">-</span></div>
+      <div class="card c3">Entrenamiento<br><span id="entrenamiento">-</span></div>
+      <div class="card c4">Promedios<br><span id="promedios">-</span></div>
+    </div>
+
+    <p class="subtitle-left">Gestión de Pacientes</p>
+
+    <!-- 🔥 AQUÍ APARECEN LOS 3 PACIENTES -->
+    <div id="resumenPacientes" style="text-align:left; margin-top:10px;">
+        <p style="color:gray;">Cargando pacientes...</p>
+    </div>
+
+    <a href="pacientes.html" style="
+        display:inline-block;
+        margin-top:10px;
+        font-size:16px;
+        color:#1976d2;
+        text-decoration:none;
+    ">
+        Ver todos los pacientes →
+    </a>
+
+    <p style="text-align:left;color:gray;">________________________________________________</p>
+
+    <a href="calendario.html" class="calendar-btn">📅 Calendario de Citas</a>
+  </div>
+
+  <div class="bottom-nav">
+    <a href="admin_dashboard.html" class="nav-item">
+      <img src="logo.png" />
+      <br>Dashboard
+    </a>
+
+    <a href="pacientes.html" class="nav-item">
+      <img src="logo.png" />
+      <br>Pacientes
+    </a>
+
+    <a href="ejercicios.html" class="nav-item">
+      <img src="logo.png" style="transform:rotate(45deg);" />
+      <br>Ejercicios
+    </a>
+  </div>
+
+
+<!-- FIREBASE SCRIPT -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, limit } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
+  authDomain: "rfa-2025.firebaseapp.com",
+  projectId: "rfa-2025",
+  storageBucket: "rfa-2025.firebasestorage.app",
+  messagingSenderId: "113686586280",
+  appId: "1:113686586280:web:223b4277f53ca0607c339d",
+  measurementId: "G-T7F5V4WGY9"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// ========================================================
+// 🔥 CORREGIDO: MOSTRAR 3 PACIENTES REALES DE FIRESTORE
+// ========================================================
+async function cargarResumenPacientes() {
+    const cont = document.getElementById("resumenPacientes");
+
+    try {
+        const q = query(
+            collection(db, "pacientes"),
+            limit(3)
+        );
+
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            cont.innerHTML = `
+                <p style="color:gray;">No hay pacientes registrados todavía.</p>
+            `;
+            return;
+        }
+
+        let html = "";
+
+        snap.forEach(doc => {
+            const p = doc.data();
+
+            const nombrePaciente =
+                p.nombre ||
+                p.usuario ||
+                "Paciente sin nombre";
+
+            const foto =
+                p.foto && p.foto.trim() !== ""
+                ? p.foto
+                : "user.png";
+
+            const plan =
+                p.planAsignado ||
+                (p.planesAsignados && p.planesAsignados[0]?.nombre) ||
+                "Sin plan";
+
+            html += `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    background:white;
+                    padding:12px;
+                    border-radius:12px;
+                    margin-bottom:12px;
+                    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+                ">
+                    <img src="${foto}" style="
+                        width:55px;
+                        height:55px;
+                        border-radius:50%;
+                        object-fit:cover;
+                        margin-right:12px;
+                    ">
+                    <div style="flex:1;">
+                        <div style="font-size:17px;font-weight:bold;">
+                            ${nombrePaciente}
+                        </div>
+                        <div style="color:gray;font-size:14px;">
+                            ${plan}
+                        </div>
+                    </div>
+
+                    <!-- CORREGIDO: REDIRIGE A paciente.html -->
+                    <a href="pacientes.html?id=${doc.id}" style="
+                        padding:8px 12px;
+                        background:#1976d2;
+                        color:white;
+                        border-radius:8px;
+                        font-size:14px;
+                        text-decoration:none;
+                    ">
+                        Ver
+                    </a>
+                </div>
+            `;
+        });
+
+        cont.innerHTML = html;
+
+    } catch (e) {
+        cont.innerHTML = `<p style="color:red;">Error al cargar pacientes.</p>`;
+        console.error(e);
+    }
+}
+
+cargarResumenPacientes();
+
+// =======================================
+// 📊 ESTADÍSTICAS DEL DASHBOARD
+// =======================================
+
+// Contar documentos en una colección
+async function contarDocumentos(nombreColeccion) {
+    const snap = await getDocs(collection(db, nombreColeccion));
+    return snap.size; // número total
+}
+
+async function cargarEstadisticas() {
+    try {
+
+        // 🔥 1. TOTAL DE PACIENTES
+        const totalPacientes = await contarDocumentos("pacientes");
+        document.getElementById("pacientes").textContent = totalPacientes;
+
+        // 🔥 2. TOTAL DE PLANES
+        const totalPlanes = await contarDocumentos("planes");
+        document.getElementById("planes").textContent = totalPlanes;
+
+        // 🔥 3. ENTRENAMIENTOS (si tu colección se llama diferente, dime)
+        const totalEntrenamientos = await contarDocumentos("ejercicios");
+        document.getElementById("entrenamiento").textContent = totalEntrenamientos;
+
+        // 🔥 4. PROMEDIOS (EJEMPLO)
+        let promedio = 0;
+        if (totalPacientes > 0) {
+            promedio = (totalPlanes / totalPacientes).toFixed(1);
+        }
+        document.getElementById("promedios").textContent = promedio;
+
+    } catch (e) {
+        console.error("Error cargando estadísticas", e);
+    }
+}
+
+cargarEstadisticas();
+
+</script>
+
+
+
+</body>
+</html>

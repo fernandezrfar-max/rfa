@@ -1,0 +1,270 @@
+/* Variables de Colores */
+:root {
+    --primary-teal: #008080; /* El verde/turquesa de RFA (COLOR DE MARCA) */
+    --text-dark: #222;
+    --text-muted: #666;
+    --bg-light: #f4f6f9; /* Fondo muy claro */
+    --nav-active: #e0f2f1; /* Fondo claro para el botón activo de navegación */
+
+    /* COLORES VIVOS Y MODERNOS PARA LAS TARJETAS */
+    --card-blue: #1E90FF;    /* Azul brillante para Pacientes */
+    --card-purple: #9370DB;  /* Morado suave y moderno para Planes */
+    --card-green: #3CB371;   /* Verde esmeralda para Entrenamiento */
+    --card-orange: #FF8C00;  /* Naranja brillante para Promedios */
+
+    --button-blue: #2196F3; /* Azul del botón Plan de Entrenamiento */
+}
+
+/* Estilos Globales y Layout */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: sans-serif;
+    background-color: var(--bg-light);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 480px; 
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-area {
+    padding: 0 20px;
+    flex-grow: 1; 
+    overflow-y: auto; 
+    padding-bottom: 70px; 
+}
+
+/* --- BARRA SUPERIOR (HEADER) --- */
+.admin-header {
+    background-color: var(--primary-teal);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.admin-header h1 {
+    font-size: 1.1em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+/* --- SECCIÓN DE PERFIL Y LOGO --- */
+.profile-section {
+    padding-top: 20px;
+    text-align: center;
+}
+
+.logo-image {
+    width: 150px;
+    height: auto;
+    display: block;
+    margin: 0 auto 5px;
+}
+
+.logo-text {
+    font-size: 0.75em;
+    color: var(--primary-teal);
+    letter-spacing: 0.8px;
+    font-weight: 500;
+}
+
+.admin-name {
+    margin-bottom: 25px;
+}
+
+.md-name {
+    /* CORRECCIÓN: Nombre del doctor en color de marca */
+    color: var(--primary-teal);
+    font-size: 1.2em;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background-color: #eee;
+    margin: 10px 0 25px 0;
+}
+
+/* --- TÍTULOS DE SECCIÓN --- */
+.section-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--text-dark);
+}
+
+.stats-title {
+    display: flex;
+    align-items: center;
+}
+
+.stats-title .icon-teal {
+    color: var(--primary-teal);
+    margin-right: 8px;
+    font-size: 1.1em;
+}
+
+/* --- BOTONES DE ACCIÓN (MEJORADOS) --- */
+.action-button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    transition: all 0.2s; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}
+
+.action-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.icon-white { color: white; }
+.icon-green { color: var(--primary-teal); }
+
+.primary-blue {
+    background-color: var(--button-blue);
+    color: white;
+}
+
+.secondary-green {
+    background-color: white;
+    color: var(--primary-teal);
+    border: 1px solid var(--primary-teal);
+    box-shadow: none; 
+}
+
+/* --- ESTADÍSTICAS (GRID DE TARJETAS MEJORADAS) --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    color: white;
+    padding: 25px 15px; 
+    border-radius: 18px; 
+    text-align: center;
+    min-height: 150px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15); 
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.card-icon {
+    font-size: 1.8em; 
+    margin-bottom: 5px;
+}
+
+.stat-number {
+    font-size: 2.5em; 
+    font-weight: 900; 
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); 
+}
+
+.stat-label {
+    font-size: 0.85em;
+    opacity: 0.95;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Aplicación de COLORES VIVOS */
+.blue-card { background-color: var(--card-blue); }
+.purple-card { background-color: var(--card-purple); }
+.green-card { background-color: var(--card-green); }
+.orange-card { background-color: var(--card-orange); }
+
+/* --- GESTIÓN DE PACIENTES --- */
+.empty-message {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    text-align: left;
+    margin-bottom: 20px;
+    padding-left: 5px;
+}
+
+/* --- BARRA DE NAVEGACIÓN INFERIOR --- */
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    background-color: white;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); 
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.75em;
+    text-decoration: none;
+    transition: color 0.2s;
+    padding: 5px;
+}
+
+.nav-item i {
+    font-size: 1.3em;
+    margin-bottom: 4px;
+}
+
+.nav-item:hover {
+    color: var(--primary-teal);
+}
+
+.nav-item.active {
+    color: var(--primary-teal);
+    background-color: var(--nav-active); 
+    border-radius: 8px;
+    padding: 5px 10px;
+}

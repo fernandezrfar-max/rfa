@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFA - Rehabilitación Física y Acondicionamiento</title>
+    <link rel="icon" href="img/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* ESTILOS BASE - GENERALES */
+        :root {
+            --primary-color: #5d5dff;
+            --secondary-color: #3b3b98;
+            --background-dark: #1a1a2e;
+            --text-color: #ffffff;
+            --card-bg: #22223b;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            color: var(--text-color);
+            background-color: var(--background-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+
+        /* BARRA DE NAVEGACIÓN Y MENÚ MÓVIL (CORREGIDO) */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background-color: var(--background-dark); 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .logo h1 {
+            font-size: 1.8em;
+            margin: 0;
+        }
+
+        /* Base del menú desplegable (Oculto en móvil por defecto) */
+        .nav-links {
+            position: fixed; 
+            top: 0;
+            right: 0; 
+            width: 70%; 
+            max-width: 300px;
+            height: 100vh;
+            background-color: #2b3a55; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 80px; 
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.7);
+            transform: translateX(100%); 
+            transition: transform 0.3s ease-in-out;
+            z-index: 999;
+        }
+
+        /* Estado Activo: Mostrar el menú */
+        .nav-links.active {
+            transform: translateX(0); 
+        }
+
+        .nav-links ul {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            text-align: left; /* Alineación crucial para el menú móvil */
+        }
+
+        .nav-links li {
+            text-align: left; 
+            margin: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links a {
+            display: block;
+            padding: 15px 5%; 
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .nav-links a:hover {
+            background-color: #4a5c7f;
+        }
+
+        /* Botón Hamburguesa */
+        .hamburger {
+            cursor: pointer;
+            display: block; 
+            padding: 10px 5px 10px 10px; 
+            margin-right: -5px; 
+        }
+
+        .line {
+            width: 25px;
+            height: 3px;
+            background-color: var(--text-color);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Animación de la X */
+        .hamburger.active .line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active .line:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        .hamburger.active .line:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+
+        /* MEDIA QUERY PARA ESCRITORIO (Desktop) */
+        @media (min-width: 768px) {
+            .hamburger {
+                display: none; 
+            }
+
+            .nav-links {
+                position: static; 
+                width: auto;
+                height: auto;
+                background-color: transparent;
+                box-shadow: none;
+                transform: translateX(0);
+                flex-direction: row;
+                padding-top: 0;
+            }
+
+            .nav-links ul {
+                display: flex;
+                gap: 25px;
+                text-align: center;
+            }
+
+            .nav-links li {
+                border-bottom: none;
+            }
+
+            .nav-links a {
+                padding: 5px 10px;
+                font-size: 1em;
+            }
+
+            .nav-links a:hover {
+                background-color: transparent;
+                color: var(--primary-color);
+            }
+        }
+
+        /* ESTILOS DE SECCIONES Y COMPONENTES (Continuación) */
+        section {
+            padding: 60px 5%;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* ... el resto de tus estilos (botones, features, contact, etc.) */
+        /* Sección de Bienvenida */
+        .welcome-section {
+            background: linear-gradient(135deg, var(--background-dark) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+        }
+
+        .welcome-content {
+            max-width: 800px;
+        }
+
+        .greeting {
+            font-size: 1.2em;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .main-thanks {
+            font-size: 3em;
+            line-height: 1.1;
+            margin-top: 0.1em;
+            text-shadow: 0 0 10px rgba(93, 93, 255, 0.5);
+        }
+
+        .download-prompt {
+            font-size: 1.2em;
+            margin: 20px 0 30px 0;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Botones */
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .primary-btn {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+        }
+
+        .secondary-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .glow-btn:hover {
+            box-shadow: 0 0 20px var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .outline-btn:hover {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            flex-direction: row;
+            padding: 80px 5%;
+        }
+
+        .hero-content {
+            flex: 1;
+            text-align: left;
+            max-width: 50%;
+        }
+
+        .hero-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Features Section */
+        .features {
+            background-color: var(--card-bg);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+            max-width: 1200px;
+        }
+
+        .feature-card {
+            background-color: var(--background-dark);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(93, 93, 255, 0.5);
+        }
+
+        .icon-wrapper {
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        /* Contact Section */
+        .contact {
+            background-color: var(--background-dark);
+        }
+
+        #contactForm {
+            max-width: 500px;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #4a4a6b;
+            background-color: #2b2b4d;
+            color: var(--text-color);
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #111122;
+            padding: 20px 5%;
+            text-align: center;
+            font-size: 0.9em;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-icons {
+            margin-top: 10px;
+        }
+
+        .social-icons a {
+            color: var(--text-color);
+            font-size: 1.2em;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+
+        .social-icons a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Botón Flotante */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            transition: all 0.3s;
+        }
+
+        .floating-btn:hover {
+            box-shadow: 0 0 20px var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        /* MEDIA QUERY PARA AJUSTES FINALES */
+        @media (max-width: 768px) {
+            .main-thanks {
+                font-size: 2.2em;
+            }
+
+            .hero {
+                flex-direction: column;
+            }
+
+            .hero-content {
+                max-width: 100%;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .hero-image {
+                padding: 0 10px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* Estilos para animación de scroll */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        } 
+        
+        /* Estilos para el fondo animado (canvas) */
+        #bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <img src="logo.png" alt="Logo RFA">
+            <h1>RFA</h1>
+        </div>
+        <nav class="nav-links" id="nav-links">
+            <ul>
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#caracteristicas">Características</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+        </nav>
+        <div class="hamburger" id="hamburger">
+        </div>
+    </header>
+
+    <section id="bienvenida" class="welcome-section animate-on-scroll">
+        <div class="welcome-content">
+            <p class="greeting">👋 ¡Hola!</p>
+            <p class="thanks">Tu plataforma de rehabilitación y acondicionamiento.</p>
+            <h1 class="main-thanks">Bienvenido a RFA. Tu bienestar, nuestra prioridad.</h1>
+            <p class="download-prompt">RFA: La herramienta definitiva para tu mejora física.</p>
+            
+            <div class="btn-group main-cta">
+                <a href="app.html" class="btn primary-btn glow-btn">
+                    <i class="fas fa-sign-in-alt"></i> Ir a la App
+                </a>
+                <a href="#caracteristicas" class="btn secondary-btn outline-btn">
+                    <i class="fas fa-info-circle"></i> Saber Más
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <section id="inicio" class="hero animate-on-scroll">
+        <div class="hero-content">
+            <h2>Transforma tu cuerpo, redefine tu salud.</h2>
+            <p>Con RFA, accede a programas personalizados, seguimiento profesional y herramientas avanzadas para tu recuperación y mejora física.</p>
+            <div class="btn-group">
+                <a href="app.html" class="btn primary-btn glow-btn">
+                    <i class="fas fa-arrow-right"></i> Ir a la App
+                </a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="app.jpg" alt="Vista previa RFA">
+            <div class="image-overlay"></div>
+        </div>
+    </section>
+
+    <section id="caracteristicas" class="features animate-on-scroll">
+        <h2>Potencia tu recuperación con nuestras características innovadoras</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-wrapper"><i class="fas fa-dumbbell"></i></div>
+                <h3>Rutinas Inteligentes</h3>
+                <p>Programas de ejercicio y rehabilitación adaptados a tus necesidades y progreso.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-wrapper"><i class="fas fa-comments"></i></div>
+                <h3>Asesoría Experta</h3>
+                <p>Conéctate con fisioterapeutas y entrenadores para un soporte continuo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-wrapper"><i class="fas fa-chart-line"></i></div>
+                <h3>Progreso Visible</h3>
+                <p>Gráficas detalladas y estadísticas que te motivan a seguir adelante.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-wrapper"><i class="fas fa-globe-americas"></i></div>
+                <h3>Flexibilidad Total</h3>
+                <p>Accede a tus planes desde cualquier lugar y dispositivo, a tu ritmo.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contacto" class="contact animate-on-scroll">
+        <h2>¿Listo para empezar? Contáctanos.</h2>
+        <p class="contact-subtext">Tu consulta es importante para nosotros. Envíanos un mensaje y te responderemos a la brevedad.</p>
+        <form id="contactForm">
+            <div class="form-group">
+                <input type="text" placeholder="Nombre completo" required>
+            </div>
+            <div class="form-group">
+                <input type="email" placeholder="Correo electrónico" required>
+            </div>
+            <div class="form-group">
+                <textarea placeholder="Escribe tu mensaje..." required></textarea>
+            </div>
+            <button type="submit" class="btn primary-btn glow-btn">
+                <i class="fas fa-paper-plane"></i> Enviar Mensaje
+            </button>
+        </form>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 RFA - Rehabilitación Física y Acondicionamiento. Desarrollado por Web SJ.</p>
+        <div class="social-icons">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+    </footer>
+
+    <a href="app.html" class="floating-btn">
+        <i class="fas fa-arrow-right"></i>
+    </a>
+
+    <canvas id="bg-animation"></canvas>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. LÓGICA DEL MENÚ HAMBURGUESA
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('nav-links');
+
+            // Alternar la clase 'active' al hacer clic en el ícono
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                hamburger.classList.toggle('active');
+            });
+
+            // Cerrar el menú al hacer clic en un enlace (para navegación interna)
+            navLinks.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (navLinks.classList.contains('active')) {
+                        navLinks.classList.remove('active');
+                        hamburger.classList.remove('active');
+                    }
+                });
+            });
+
+            // 2. LÓGICA DE ANIMACIÓN AL DESPLAZAR (animate-on-scroll)
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.2
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.animate-on-scroll').forEach(element => {
+                observer.observe(element);
+            });
+            
+            // 3. (OPCIONAL) Código de JavaScript para el canvas "bg-animation" iría aquí.
+        });
+    </script>
+</body>
+</html>
