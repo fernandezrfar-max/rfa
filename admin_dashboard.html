@@ -21,6 +21,7 @@
       top: 0;
       border-bottom-left-radius: 10px;
       border-bottom-right-radius: 10px;
+      z-index: 10; /* Asegurar que esté encima del contenido */
     }
     .container {
       padding: 20px;
@@ -70,7 +71,7 @@
       margin-top: 15px;
     }
 
-    /* Estilo base para las tarjetas/botones de estadísticas */
+    /* Estilo base para las tarjetas/botones de estadísticas (corregido) */
     .card-link {
       display: flex;
       flex-direction: column;
@@ -83,13 +84,14 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
       text-decoration: none; /* Quitamos el subrayado del enlace */
       transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
     }
     .card-link:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 15px rgba(0,0,0,0.2);
     }
 
-    /* Estilos de color */
+    /* Estilos de color originales */
     .c1 { background: linear-gradient(135deg, #2196f3, #1565c0); }
     .c2 { background: linear-gradient(135deg, #ab47bc, #7b1fa2); }
     .c3 { background: linear-gradient(135deg, #43a047, #2e7d32); }
@@ -148,7 +150,11 @@
       color: #00695c;
       font-size: 14px;
       text-decoration: none;
+      transition: opacity 0.2s;
     }
+    .nav-item:hover {
+        opacity: 0.7;
+    }
 
     .nav-item img {
       width: 22px;
@@ -169,13 +175,18 @@
         border-radius:8px;
         text-decoration:none;
         font-size:14px;
-     ">
+        transition: opacity 0.2s;
+     "
+      onmouseover="this.style.opacity='0.9'"
+      onmouseout="this.style.opacity='1'"
+      >
     Salir
   </a>
 </header>
 
   <div class="container">
     <div class="logo">
+      <!-- Usando un placeholder con texto para mejor visualización si la imagen original no carga -->
       <img src="https://placehold.co/150x150/009688/ffffff?text=Logo" alt="logo" onerror="this.src='logo.png';" />
     </div>
 
@@ -202,13 +213,13 @@
         <div class="card-number" id="planes">-</div>
       </a>
 
-      <!-- Tarjeta 3: Entrenamiento (Mantiene el estilo de tarjeta/botón) -->
+      <!-- Tarjeta 3: Entrenamiento (Mantiene el estilo de tarjeta/botón, sin redirección específica) -->
       <a href="#" class="card-link c3">
         <div class="card-text">Entrenamiento</div>
         <div class="card-number" id="entrenamiento">-</div>
       </a>
 
-      <!-- Tarjeta 4: Promedios (Mantiene el estilo de tarjeta/botón) -->
+      <!-- Tarjeta 4: Promedios (Mantiene el estilo de tarjeta/botón, sin redirección específica) -->
       <a href="#" class="card-link c4">
         <div class="card-text">Promedios</div>
         <div class="card-number" id="promedios">-</div>
@@ -216,9 +227,6 @@
     </div>
 
     <p class="subtitle-left">Gestión de Pacientes</p>
-
-    <!-- Aquí podría ser el ancla para la redirección, aunque el hash en el href es suficiente si la sección existe en el otro HTML -->
-    <a id="planes-asignados"></a>
 
     <!-- 🔥 AQUÍ APARECEN LOS 3 PACIENTES -->
     <div id="resumenPacientes" style="text-align:left; margin-top:10px;">
@@ -232,7 +240,11 @@
         color:#1976d2;
         text-decoration:none;
         font-weight: 500;
-    ">
+        transition: opacity 0.2s;
+    "
+      onmouseover="this.style.opacity='0.8'"
+      onmouseout="this.style.opacity='1'"
+      >
         Ver todos los pacientes →
     </a>
 
@@ -272,7 +284,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// Fallback configuration if running outside Canvas
+// Fallback configuration if running outside Canvas (for testing purposes)
 if (Object.keys(firebaseConfig).length === 0) {
     Object.assign(firebaseConfig, {
         apiKey: "AIzaSyD-w5QswIehqDGUohWReinNK5MXFW0C_Nw",
@@ -311,7 +323,7 @@ async function authenticateUser() {
 }
 
 // ========================================================
-// 🔥 CORREGIDO: MOSTRAR 3 PACIENTES REALES DE FIRESTORE
+// 🔥 CARGAR LOS 3 PACIENTES MÁS RECIENTES DE FIRESTORE
 // ========================================================
 async function cargarResumenPacientes() {
     if (!userId) {
@@ -319,12 +331,13 @@ async function cargarResumenPacientes() {
         return;
     }
     const cont = document.getElementById("resumenPacientes");
+    // Ruta de colección pública para pacientes
     const pacientesCollectionPath = `/artifacts/${appId}/public/data/pacientes`;
 
     try {
         const q = query(
             collection(db, pacientesCollectionPath),
-            limit(3)
+            limit(3) // Limitar a 3
         );
 
         const snap = await getDocs(q);
@@ -382,7 +395,6 @@ async function cargarResumenPacientes() {
                         </div>
                     </div>
 
-                    <!-- CORREGIDO: REDIRIGE a pacientes.html para ver detalles -->
                     <a href="pacientes.html?id=${doc.id}" style="
                         padding:8px 12px;
                         background:#1976d2;
@@ -414,13 +426,13 @@ async function cargarResumenPacientes() {
 // Contar documentos en una colección
 async function contarDocumentos(collectionName) {
     if (!userId) {
-        console.log("Waiting for user authentication before counting documents...");
         return 0;
     }
+    // Ruta de colección pública para datos
     const collectionPath = `/artifacts/${appId}/public/data/${collectionName}`;
 
     try {
-        // Usamos una consulta simple para contar documentos en la colección pública
+        // Obtenemos todos los documentos para el conteo
         const q = query(collection(db, collectionPath));
         const snap = await getDocs(q);
         return snap.size;
@@ -438,21 +450,22 @@ async function cargarEstadisticas() {
 
     try {
 
-        // 🔥 1. TOTAL DE PACIENTES
+        // 1. TOTAL DE PACIENTES
         const totalPacientes = await contarDocumentos("pacientes");
         document.getElementById("pacientes").textContent = totalPacientes;
 
-        // 🔥 2. TOTAL DE PLANES
+        // 2. TOTAL DE PLANES (Planes Activos)
         const totalPlanes = await contarDocumentos("planes");
         document.getElementById("planes").textContent = totalPlanes;
 
-        // 🔥 3. ENTRENAMIENTOS (si tu colección se llama diferente, dime)
+        // 3. ENTRENAMIENTOS (Ejercicios disponibles en la base de datos)
         const totalEjercicios = await contarDocumentos("ejercicios");
         document.getElementById("entrenamiento").textContent = totalEjercicios;
 
-        // 🔥 4. PROMEDIOS (Planes por Paciente como ejemplo)
+        // 4. PROMEDIOS (Planes promedio por Paciente como ejemplo)
         let promedio = 0;
         if (totalPacientes > 0) {
+            // Calcula el promedio y lo limita a un decimal
             promedio = (totalPlanes / totalPacientes).toFixed(1);
         }
         document.getElementById("promedios").textContent = promedio;
@@ -462,6 +475,7 @@ async function cargarEstadisticas() {
     }
 }
 
+// Iniciar la autenticación al cargar el script
 authenticateUser();
 
 </script>
